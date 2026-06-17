@@ -1,0 +1,57 @@
+# Dependency directories
+node_modules/
+
+# Build outputs
+dist/
+dist-ssr/
+build/
+web-build/
+.output/
+.vinxi/
+.tanstack/
+.nitro/
+
+# Expo specific
+.expo/
+
+# iOS/Android build files (if native code is generated later)
+ios/build/
+android/build/
+*.jks
+*.p12
+*.key
+*.mobileprovision
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+*.env
+.dev.vars
+
+# Wrangler / Cloudflare
+.wrangler/
+
+# OS files
+.DS_Store
+
+# IDEs and Editors
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

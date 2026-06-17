@@ -1,0 +1,28 @@
+{
+  "expo": {
+    "name": "MyDesignGhar",
+    "slug": "mydesignghar",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "light",
+    "scheme": "mydesignghar",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.mydesignghar.app",
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "MyDesignGhar needs access to your microphone to transcribe your speech design vision."
+      }
+    },
+    "android": {
+      "package": "com.mydesignghar.app",
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      "expo-web-browser"
+    ]
+  }
+}
