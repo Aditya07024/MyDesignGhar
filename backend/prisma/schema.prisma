@@ -1,0 +1,438 @@
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum Role {
+  USER
+  CONSULTANT
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum TransactionType {
+  CREDIT
+  DEBIT
+}
+
+enum TransactionCategory {
+  TOP_UP
+  REWARD
+  PAY_DESIGN
+  PAY_CONSULTATION
+  REFUND
+}
+
+enum ConsultantStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
+model User {
+  id              String        @id @default(uuid())
+  clerkId         String        @unique @map("clerk_id")
+  phone           String        @unique
+  email           String?       @unique
+  role            Role          @default(USER)
+  isRoleLocked    Boolean       @default(false) @map("is_role_locked")
+  isActive        Boolean       @default(true)
+  isPhoneVerified Boolean       @default(false)
+  isEmailVerified Boolean       @default(false)
+  referralCode    String        @unique @default("")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+  deletedAt       DateTime?     @map("deleted_at")
+
+  profile                Profile?
+  wallet                 Wallet?
+  designs                Design[]
+  purchases              Purchase[]
+  consultantProfile      Consultant?
+  reviewsWritten         ConsultantReview[]
+  bookings               ConsultationBooking[]
+  clicks                 AffiliateClick[]
+  referralsMade          Referral[]            @relation("Referrer")
+  referralReceived       Referral?             @relation("Referee")
+  notifications          Notification[]
+  favorites              Favorite[]
+  challengeEntries       ChallengeEntry[]
+  leaderboard            Leaderboard?
+  badges                 Badge[]
+  auditLogs              AuditLog[]
+
+  @@index([phone])
+  @@index([email])
+  @@map("users")
+}
+
+model Profile {
+  id        String   @id @default(uuid())
+  userId    String   @unique @map("user_id")
+  fullName  String   @map("full_name")
+  avatarUrl String?  @map("avatar_url")
+  bio       String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("profiles")
+}
+
+model Design {
+  id        String    @id @default(uuid())
+  userId    String?   @map("user_id")
+  roomType  String    @map("room_type")
+  style     String
+  budget    String
+  prompt    String
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  user      User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
+  images    DesignImage[]
+  purchases Purchase[]
+  favorites Favorite[]
+  challenge ChallengeEntry[]
+
+  @@index([userId])
+  @@map("designs")
+}
+
+model DesignImage {
+  id           String   @id @default(uuid())
+  designId     String   @map("design_id")
+  originalUrl  String   @map("original_url")
+  previewUrl   String   @map("preview_url")
+  thumbnailUrl String   @map("thumbnail_url")
+  depthMapUrl  String?  @map("depth_map_url")
+  provider     String
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  design    Design     @relation(fields: [designId], references: [id], onDelete: Cascade)
+  purchases Purchase[]
+
+  @@index([designId])
+  @@map("design_images")
+}
+
+model Purchase {
+  id                String       @id @default(uuid())
+  userId            String       @map("user_id")
+  designId          String       @map("design_id")
+  designImageId     String?      @map("design_image_id")
+  amount            Float        @default(299.0)
+  razorpayOrderId   String?      @map("razorpay_order_id")
+  razorpayPaymentId String?      @map("razorpay_payment_id")
+  status            String       @default("PENDING")
+  createdAt         DateTime     @default(now()) @map("created_at")
+  updatedAt         DateTime     @updatedAt @map("updated_at")
+  deletedAt         DateTime?    @map("deleted_at")
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  design      Design       @relation(fields: [designId], references: [id], onDelete: Cascade)
+  designImage DesignImage? @relation(fields: [designImageId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([designId])
+  @@index([designImageId])
+  @@map("purchases")
+}
+
+model Wallet {
+  id        String   @id @default(uuid())
+  userId    String   @unique @map("user_id")
+  balance   Float    @default(0.0)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user         User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions WalletTransaction[]
+
+  @@map("wallets")
+}
+
+model WalletTransaction {
+  id          String              @id @default(uuid())
+  walletId    String              @map("wallet_id")
+  amount      Float
+  type        TransactionType
+  category    TransactionCategory
+  referenceId String?             @map("reference_id")
+  description String
+  createdAt   DateTime            @default(now()) @map("created_at")
+
+  wallet Wallet @relation(fields: [walletId], references: [id], onDelete: Cascade)
+
+  @@index([walletId])
+  @@map("wallet_transactions")
+}
+
+model Consultant {
+  id         String           @id @default(uuid())
+  userId     String           @unique @map("user_id")
+  specialty  String
+  experience Int
+  bio        String
+  price      Float
+  isApproved Boolean          @default(false) @map("is_approved")
+  status     ConsultantStatus @default(PENDING)
+  createdAt  DateTime         @default(now()) @map("created_at")
+  updatedAt  DateTime         @updatedAt @map("updated_at")
+  deletedAt  DateTime?        @map("deleted_at")
+
+  user         User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  portfolios   ConsultantPortfolio[]
+  availability ConsultantAvailability[]
+  reviews      ConsultantReview[]
+  bookings     ConsultationBooking[]
+
+  @@map("consultants")
+}
+
+model ConsultantPortfolio {
+  id           String   @id @default(uuid())
+  consultantId String   @map("consultant_id")
+  imageUrl     String   @map("image_url")
+  title        String?
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  consultant Consultant @relation(fields: [consultantId], references: [id], onDelete: Cascade)
+
+  @@index([consultantId])
+  @@map("consultant_portfolios")
+}
+
+model ConsultantAvailability {
+  id           String   @id @default(uuid())
+  consultantId String   @map("consultant_id")
+  date         DateTime
+  timeSlot     String   @map("time_slot")
+  isBooked     Boolean  @default(false) @map("is_booked")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  consultant Consultant           @relation(fields: [consultantId], references: [id], onDelete: Cascade)
+  booking    ConsultationBooking?
+
+  @@index([consultantId, date])
+  @@map("consultant_availability")
+}
+
+model ConsultantReview {
+  id           String   @id @default(uuid())
+  consultantId String   @map("consultant_id")
+  userId       String   @map("user_id")
+  rating       Int
+  text         String
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  consultant Consultant @relation(fields: [consultantId], references: [id], onDelete: Cascade)
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([consultantId])
+  @@index([userId])
+  @@map("consultant_reviews")
+}
+
+model ConsultationBooking {
+  id                String        @id @default(uuid())
+  consultantId      String        @map("consultant_id")
+  userId            String        @map("user_id")
+  availabilityId    String        @unique @map("availability_id")
+  status            BookingStatus @default(PENDING)
+  dailyRoomName     String?       @map("daily_room_name")
+  dailyRoomUrl      String?       @map("daily_room_url")
+  amount            Float
+  paymentMethod     String        @map("payment_method")
+  razorpayOrderId   String?       @map("razorpay_order_id")
+  razorpayPaymentId String?       @map("razorpay_payment_id")
+  createdAt         DateTime      @default(now()) @map("created_at")
+  updatedAt         DateTime      @updatedAt @map("updated_at")
+
+  consultant   Consultant             @relation(fields: [consultantId], references: [id], onDelete: Cascade)
+  user         User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  availability ConsultantAvailability @relation(fields: [availabilityId], references: [id], onDelete: Cascade)
+  notes        ConsultationNote?
+
+  @@index([userId])
+  @@index([consultantId])
+  @@map("consultation_bookings")
+}
+
+model ConsultationNote {
+  id        String   @id @default(uuid())
+  bookingId String   @unique @map("booking_id")
+  notes     String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  booking ConsultationBooking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@map("consultation_notes")
+}
+
+model AffiliateProduct {
+  id          String    @id @default(uuid())
+  title       String
+  description String?
+  price       Float?
+  imageUrl    String?   @map("image_url")
+  link        String
+  category    String
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+  deletedAt   DateTime? @map("deleted_at")
+
+  clicks AffiliateClick[]
+
+  @@map("affiliate_products")
+}
+
+model AffiliateClick {
+  id        String   @id @default(uuid())
+  productId String   @map("product_id")
+  userId    String?  @map("user_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  product AffiliateProduct @relation(fields: [productId], references: [id], onDelete: Cascade)
+  user    User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([productId])
+  @@index([userId])
+  @@map("affiliate_clicks")
+}
+
+model Referral {
+  id            String   @id @default(uuid())
+  referrerId    String   @map("referrer_id")
+  refereeId     String   @unique @map("referee_id")
+  code          String
+  status        String   @default("JOINED")
+  rewardGranted Boolean  @default(false) @map("reward_granted")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  referrer User @relation("Referrer", fields: [referrerId], references: [id], onDelete: Cascade)
+  referee  User @relation("Referee", fields: [refereeId], references: [id], onDelete: Cascade)
+
+  @@index([referrerId])
+  @@map("referrals")
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  title     String
+  body      String
+  type      String
+  isRead    Boolean  @default(false) @map("is_read")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("notifications")
+}
+
+model Favorite {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  designId  String   @map("design_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  design Design @relation(fields: [designId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, designId])
+  @@map("favorites")
+}
+
+model ChallengeEntry {
+  id            String   @id @default(uuid())
+  userId        String   @map("user_id")
+  designId      String   @map("design_id")
+  challengeDate String   @map("challenge_date") // Format YYYY-MM-DD
+  likes         Int      @default(0)
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  design Design @relation(fields: [designId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, challengeDate])
+  @@index([challengeDate])
+  @@map("challenge_entries")
+}
+
+model Leaderboard {
+  id        String   @id @default(uuid())
+  userId    String   @unique @map("user_id")
+  points    Int      @default(0)
+  rank      Int?
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("leaderboards")
+}
+
+model Badge {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  name        String
+  description String?
+  unlockedAt  DateTime @default(now()) @map("unlocked_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("badges")
+}
+
+model Setting {
+  id        String   @id @default(uuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("settings")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?  @map("user_id")
+  action    String
+  details   String?
+  ipAddress String?  @map("ip_address")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+model AdminUser {
+  id        String   @id @default(uuid())
+  username  String   @unique
+  password  String
+  role      Role     @default(ADMIN)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("admin_users")
+}
