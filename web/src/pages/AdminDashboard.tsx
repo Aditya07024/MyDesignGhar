@@ -528,6 +528,133 @@ export default function AdminDashboard() {
       </main>
 
       <style>{`
+        .sidebar-logo {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          font-size: 20px;
+          font-weight: 800;
+          color: var(--text);
+          margin-bottom: 40px;
+        }
+
+        .consultant-profile-card {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 16px;
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid var(--border);
+          border-radius: 12px;
+          margin-bottom: 30px;
+        }
+
+        .profile-avatar {
+          width: 44px;
+          height: 44px;
+          border-radius: 50%;
+          background: var(--primary);
+          color: #12141c;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: 800;
+          font-size: 18px;
+        }
+
+        .profile-info {
+          display: flex;
+          flex-direction: column;
+        }
+
+        .profile-name {
+          font-size: 15px;
+          font-weight: 700;
+          color: var(--text);
+        }
+
+        .profile-role {
+          font-size: 12px;
+          color: var(--text-muted);
+        }
+
+        .sidebar-nav {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+          margin-bottom: auto;
+        }
+
+        .nav-item {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 12px 16px;
+          border-radius: 10px;
+          background: none;
+          border: none;
+          color: var(--text-muted);
+          font-family: var(--font-sans);
+          font-weight: 600;
+          font-size: 15px;
+          cursor: pointer;
+          text-align: left;
+          width: 100%;
+          transition: all 0.2s ease;
+        }
+        .nav-item:hover, .nav-item.active {
+          color: var(--primary);
+          background: rgba(205, 162, 80, 0.08);
+        }
+
+        .sidebar-logout {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          width: 100%;
+          padding: 12px;
+          border-radius: 10px;
+          cursor: pointer;
+          font-family: var(--font-sans);
+          font-weight: 600;
+          font-size: 14px;
+        }
+
+        .dashboard-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 32px;
+          border-bottom: 1px solid var(--border);
+          padding-bottom: 24px;
+        }
+
+        .dashboard-header h1 {
+          font-size: 32px;
+          font-weight: 800;
+        }
+
+        .dashboard-header .subtitle {
+          color: var(--text-muted);
+          margin-top: 4px;
+        }
+
+        .portal-badge {
+          background: rgba(205, 162, 80, 0.1);
+          color: var(--primary);
+          padding: 8px 16px;
+          border: 1px solid rgba(205, 162, 80, 0.2);
+          border-radius: 8px;
+          font-weight: 700;
+          font-size: 13px;
+        }
+
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+
         .tab-loading {
           padding: 80px 20px;
           text-align: center;
