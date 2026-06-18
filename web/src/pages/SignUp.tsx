@@ -71,12 +71,16 @@ export default function SignUp() {
     e.preventDefault();
     if (!isLoaded) return;
 
-    if (!fullName || !phone || !password) {
+    if (!fullName || !phone || !password || !email) {
       setError("Please fill out all required fields.");
       return;
     }
     if (!/^\d{10}$/.test(phone)) {
       setError("Please enter a valid 10-digit phone number.");
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setError("Please enter a valid email address.");
       return;
     }
     if (password.length < 4) {
@@ -95,14 +99,14 @@ export default function SignUp() {
 
       await signUp.create({
         phoneNumber: formattedPhone,
-        emailAddress: email ? email.trim() : undefined,
+        emailAddress: email.trim(),
         password: password,
         firstName,
         lastName,
       });
 
-      // Send SMS code
-      await signUp.preparePhoneNumberVerification({ strategy: "phone_code" });
+      // Send verification code to email
+      await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
       setPhase("VERIFY");
     } catch (err: any) {
       setError(err.errors?.[0]?.message || "Failed to create account. Please try again.");
@@ -111,7 +115,7 @@ export default function SignUp() {
     }
   };
 
-  // Handle step 2: verify phone
+  // Handle step 2: verify email
   const handleVerifySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isLoaded) return;
@@ -125,7 +129,7 @@ export default function SignUp() {
     setLoading(true);
 
     try {
-      const result = await signUp.attemptPhoneNumberVerification({
+      const result = await signUp.attemptEmailAddressVerification({
         code: verificationCode,
       });
 
@@ -223,7 +227,7 @@ export default function SignUp() {
           <h2>Become a Consultant</h2>
           <p>
             {phase === "ACCOUNT" && "Create your designer account to start."}
-            {phase === "VERIFY" && "Verify your phone number to continue."}
+            {phase === "VERIFY" && "Verify your email address to continue."}
             {phase === "PROFILE" && "Complete your professional profile application."}
           </p>
         </div>
@@ -265,7 +269,7 @@ export default function SignUp() {
             </div>
 
             <div className="form-group">
-              <label className="form-label">Email Address (Optional)</label>
+              <label className="form-label">Email Address *</label>
               <div className="input-wrapper">
                 <Mail size={18} className="input-icon" />
                 <input
@@ -353,7 +357,7 @@ export default function SignUp() {
         {phase === "VERIFY" && (
           <form onSubmit={handleVerifySubmit} className="auth-form">
             <div className="form-group">
-              <label className="form-label">Verification Code (SMS) *</label>
+              <label className="form-label">Verification Code (Email) *</label>
               <input
                 type="text"
                 className="form-input"

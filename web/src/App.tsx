@@ -94,6 +94,11 @@ function AdminProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isSignedIn, isLoaded } = useAuth();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
 
+  // Helper navigate inside fallback UI
+  const navigate = (path: string) => {
+    window.location.href = path;
+  };
+
   useEffect(() => {
     const verifyAdmin = async () => {
       if (isSignedIn) {
@@ -162,11 +167,6 @@ function AdminProtectedRoute({ children }: { children: React.ReactNode }) {
       </div>
     );
   }
-
-  // Helper navigate inside fallback UI
-  const navigate = (path: string) => {
-    window.location.href = path;
-  };
 
   return <>{children}</>;
 }
