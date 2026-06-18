@@ -169,7 +169,7 @@ export default function AdminDashboard() {
         </div>
 
         <div className="consultant-profile-card">
-          <div className="profile-avatar" style={{ backgroundColor: "#bf360c" }}>A</div>
+          <div className="profile-avatar">A</div>
           <div className="profile-info">
             <h4 className="profile-name">Administrator</h4>
             <span className="profile-role">Console Manager</span>
@@ -220,8 +220,8 @@ export default function AdminDashboard() {
             <h1>Admin Console</h1>
             <p className="subtitle">Manage user records, approve consultants, and track actions.</p>
           </div>
-          <div className="portal-badge" style={{ borderColor: "#bf360c", color: "#e64a19", background: "rgba(191,54,12,0.1)" }}>
-            ADMIN ACCESS
+          <div className="portal-badge">
+            Admin Portal
           </div>
         </header>
 
@@ -442,7 +442,6 @@ export default function AdminDashboard() {
                         value={productCategory}
                         onChange={(e) => setProductCategory(e.target.value)}
                         disabled={productLoading}
-                        style={{ background: "rgba(0,0,0,0.3)", color: "white" }}
                       >
                         <option value="Living Room">Living Room</option>
                         <option value="Bedroom">Bedroom</option>
@@ -571,7 +570,7 @@ export default function AdminDashboard() {
         .search-box {
           display: flex;
           align-items: center;
-          background: rgba(255, 255, 255, 0.04);
+          background: rgba(0, 0, 0, 0.02);
           border: 1px solid var(--border);
           border-radius: 10px;
           padding: 8px 16px;
@@ -583,7 +582,7 @@ export default function AdminDashboard() {
           background: none;
           border: none;
           outline: none;
-          color: white;
+          color: var(--text);
           width: 100%;
           font-family: var(--font-sans);
           font-size: 14px;
@@ -670,7 +669,6 @@ export default function AdminDashboard() {
           display: flex;
           flex-direction: column;
           gap: 16px;
-          background: rgba(255,255,255,0.01);
         }
 
         .consultant-card-header {
@@ -771,6 +769,28 @@ export default function AdminDashboard() {
 
         .text-center {
           text-align: center;
+        }
+
+        .schedule-error {
+          background: var(--error-bg);
+          color: var(--error);
+          border: 1px solid rgba(225, 29, 72, 0.1);
+          padding: 12px;
+          border-radius: 10px;
+          font-size: 14px;
+          font-weight: 600;
+          margin-bottom: 20px;
+        }
+
+        .schedule-success {
+          background: var(--success-bg);
+          color: var(--success);
+          border: 1px solid rgba(5, 150, 105, 0.1);
+          padding: 12px;
+          border-radius: 10px;
+          font-size: 14px;
+          font-weight: 600;
+          margin-bottom: 20px;
         }
 
         @media (max-width: 1200px) {
