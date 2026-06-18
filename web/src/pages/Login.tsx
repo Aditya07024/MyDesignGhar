@@ -5,12 +5,18 @@ import { Eye, EyeOff, Chrome, Apple } from "lucide-react";
 import { AuthService, setSessionToken } from "../services/api";
 import logo from "../assets/logo.png";
 
-export default function Login() {
+interface LoginProps {
+  isAdminOnly?: boolean;
+}
+
+export default function Login({ isAdminOnly = false }: LoginProps) {
   const navigate = useNavigate();
   const { isLoaded, signIn, setActive } = useSignIn();
   const { getToken, isSignedIn } = useAuth();
   
-  const [roleType, setRoleType] = useState<"CONSULTANT" | "ADMIN">("CONSULTANT");
+  const [roleType] = useState<"CONSULTANT" | "ADMIN">(
+    isAdminOnly ? "ADMIN" : "CONSULTANT"
+  );
   const [identifier, setIdentifier] = useState(""); // Email or Phone number
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -152,28 +158,7 @@ export default function Login() {
           </p>
         </div>
 
-        <div className="role-selector">
-          <button
-            type="button"
-            className={`role-btn ${roleType === "CONSULTANT" ? "active" : ""}`}
-            onClick={() => {
-              setRoleType("CONSULTANT");
-              setError("");
-            }}
-          >
-            Consultant
-          </button>
-          <button
-            type="button"
-            className={`role-btn ${roleType === "ADMIN" ? "active" : ""}`}
-            onClick={() => {
-              setRoleType("ADMIN");
-              setError("");
-            }}
-          >
-            Administrator
-          </button>
-        </div>
+
 
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-group">

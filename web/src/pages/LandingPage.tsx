@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Sparkles, Wand2, Shield, Users, ArrowRight, ChevronDown, ChevronUp, Star } from "lucide-react";
 import logo from "../assets/logo.png";
 
 export default function LandingPage() {
+  const navigate = useNavigate();
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
 
   const roomSamples = [
@@ -149,7 +150,27 @@ export default function LandingPage() {
         <div className="nav-links">
           <Link to="/consultant/login" className="nav-item">Consultant Portal</Link>
           <Link to="/consultant/signup" className="nav-item">Become a Consultant</Link>
-          <Link to="/admin" className="nav-item admin-link">Admin Panel</Link>
+          <button
+            onClick={() => {
+              const pw = window.prompt("Enter administrative access key:");
+              if (pw === "1234567890") {
+                navigate("/admin");
+              } else if (pw !== null) {
+                alert("Invalid access key. Access denied.");
+              }
+            }}
+            className="nav-item admin-link"
+            style={{
+              background: "rgba(205, 162, 80, 0.1)",
+              border: "1px solid rgba(205, 162, 80, 0.2)",
+              cursor: "pointer",
+              fontFamily: "inherit",
+              borderRadius: "8px",
+              padding: "8px 16px",
+            }}
+          >
+            Admin Panel
+          </button>
         </div>
       </nav>
 

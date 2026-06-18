@@ -134,7 +134,7 @@ function AdminProtectedRoute({ children }: { children: React.ReactNode }) {
           <p>You do not have administrative privileges to access this console.</p>
           <div style={{ display: "flex", gap: "12px", justifyContent: "center" }}>
             <button className="btn btn-secondary" onClick={() => navigate("/")}>Home</button>
-            <button className="btn btn-primary" onClick={() => navigate("/consultant/login")}>Admin Login</button>
+            <button className="btn btn-primary" onClick={() => navigate("/admin/login")}>Admin Login</button>
           </div>
         </div>
         <style>{`
@@ -181,8 +181,9 @@ export default function App() {
             <Route path="/" element={<LandingPage />} />
 
             {/* Auth Routes */}
-            <Route path="/consultant/login" element={<Login />} />
+            <Route path="/consultant/login" element={<Login isAdminOnly={false} />} />
             <Route path="/consultant/signup" element={<SignUp />} />
+            <Route path="/admin/login" element={<Login isAdminOnly={true} />} />
 
             {/* Protected Consultant Portal */}
             <Route
