@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useSignUp, useAuth } from "@clerk/clerk-react";
-import { Sparkles, Phone, Lock, User, Mail, Award, DollarSign, BookOpen, Image as ImageIcon, Chrome, Apple } from "lucide-react";
+import { Phone, Lock, User, Mail, Award, DollarSign, BookOpen, Image as ImageIcon, Chrome, Apple } from "lucide-react";
 import { AuthService, ConsultantService, setSessionToken } from "../services/api";
+import logo from "../assets/logo.png";
 
 export default function SignUp() {
   const navigate = useNavigate();
@@ -160,6 +161,32 @@ export default function SignUp() {
       return;
     }
 
+    const expVal = parseInt(experience);
+    if (isNaN(expVal) || !/^\d+$/.test(experience) || expVal < 0) {
+      setError("Experience must be a valid non-negative integer number of years.");
+      return;
+    }
+
+    const priceVal = parseFloat(price);
+    if (isNaN(priceVal) || priceVal <= 0) {
+      setError("Consultation fee must be a valid positive number.");
+      return;
+    }
+
+    if (bio.trim().length < 10) {
+      setError("Bio/Cover Letter must be at least 10 characters.");
+      return;
+    }
+
+    let finalUrls: string[] = [];
+    if (portfolioUrl.trim()) {
+      let url = portfolioUrl.trim();
+      if (!/^https?:\/\//i.test(url)) {
+        url = `https://${url}`;
+      }
+      finalUrls = [url];
+    }
+
     setError("");
     setLoading(true);
 
@@ -170,10 +197,10 @@ export default function SignUp() {
       // 2. Submit Consultant Application
       await ConsultantService.register({
         specialty: specialty.trim(),
-        experience: parseInt(experience),
+        experience: expVal,
         bio: bio.trim(),
-        price: parseFloat(price),
-        portfolioUrls: portfolioUrl.trim() ? [portfolioUrl.trim()] : [],
+        price: priceVal,
+        portfolioUrls: finalUrls,
       });
 
       // 3. Redirect to Consultant Dashboard (pending approval)
@@ -191,7 +218,7 @@ export default function SignUp() {
       <div className="auth-card glass-card">
         <div className="auth-header">
           <div className="auth-logo">
-            <Sparkles size={28} color="var(--primary)" />
+            <img src={logo} alt="MyDesignGhar Logo" style={{ width: "100%", height: "100%", objectFit: "contain", padding: "6px" }} />
           </div>
           <h2>Become a Consultant</h2>
           <p>

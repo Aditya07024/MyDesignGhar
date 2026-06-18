@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useClerk } from "@clerk/clerk-react";
-import { Sparkles, Users, Award, ShoppingBag, ScrollText, LogOut, Ban, CheckCircle, XCircle, Search, PlusCircle } from "lucide-react";
+import { Users, Award, ShoppingBag, ScrollText, LogOut, Ban, CheckCircle, XCircle, Search, PlusCircle } from "lucide-react";
 import { AdminService } from "../services/api";
+import logo from "../assets/logo.png";
 
 type Tab = "USERS" | "CONSULTANTS" | "AFFILIATES" | "AUDIT_LOGS";
 
@@ -163,7 +164,7 @@ export default function AdminDashboard() {
       {/* Admin Sidebar */}
       <aside className="sidebar glass-panel">
         <div className="sidebar-logo">
-          <Sparkles color="var(--primary)" size={24} />
+          <img src={logo} alt="MyDesignGhar Logo" style={{ height: "32px", objectFit: "contain", marginRight: "4px" }} />
           <span className="logo-text">MyDesignGhar</span>
         </div>
 

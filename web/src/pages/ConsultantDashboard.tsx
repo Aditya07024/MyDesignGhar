@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useClerk } from "@clerk/clerk-react";
-import { Sparkles, Users, Wallet, Star, Calendar, Clock, Video, BookOpen, LogOut, ShieldAlert } from "lucide-react";
+import { Users, Wallet, Star, Calendar, Clock, Video, BookOpen, LogOut, ShieldAlert } from "lucide-react";
 import { AuthService, ConsultantService } from "../services/api";
+import logo from "../assets/logo.png";
 
 const WEEKDAYS = [
   { label: "S", value: 0 },
@@ -258,7 +259,7 @@ export default function ConsultantDashboard() {
       {/* Sidebar Navigation */}
       <aside className="sidebar glass-panel">
         <div className="sidebar-logo">
-          <Sparkles color="var(--primary)" size={24} />
+          <img src={logo} alt="MyDesignGhar Logo" style={{ height: "32px", objectFit: "contain", marginRight: "4px" }} />
           <span className="logo-text">MyDesignGhar</span>
         </div>
 

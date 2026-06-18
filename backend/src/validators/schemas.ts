@@ -59,7 +59,20 @@ export const consultantRegisterSchema = z.object({
     experience: z.number().int().min(0, "Experience must be non-negative"),
     bio: z.string().min(10, "Bio must be at least 10 characters"),
     price: z.number().positive("Consultation price must be positive"),
-    portfolioUrls: z.array(z.string().url("Invalid portfolio image URL")).optional(),
+    portfolioUrls: z
+      .array(
+        z
+          .string()
+          .transform((val) => {
+            const trimmed = val.trim();
+            if (trimmed && !/^https?:\/\//i.test(trimmed)) {
+              return `https://${trimmed}`;
+            }
+            return trimmed;
+          })
+          .pipe(z.string().url("Invalid portfolio image URL"))
+      )
+      .optional(),
   }),
 });
 

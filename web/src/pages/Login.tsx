@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useSignIn, useAuth } from "@clerk/clerk-react";
-import { Sparkles, Eye, EyeOff, Chrome, Apple } from "lucide-react";
+import { Eye, EyeOff, Chrome, Apple } from "lucide-react";
 import { AuthService, setSessionToken } from "../services/api";
+import logo from "../assets/logo.png";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -141,7 +142,7 @@ export default function Login() {
       <div className="auth-card glass-card">
         <div className="auth-header">
           <div className="auth-logo">
-            <Sparkles size={28} color="var(--primary)" />
+            <img src={logo} alt="MyDesignGhar Logo" style={{ width: "100%", height: "100%", objectFit: "contain", padding: "6px" }} />
           </div>
           <h2>{roleType === "CONSULTANT" ? "Consultant Portal" : "Admin Panel"}</h2>
           <p>

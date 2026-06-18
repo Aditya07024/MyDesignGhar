@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Sparkles, Wand2, Shield, Users, ArrowRight, ChevronDown, ChevronUp, Star } from "lucide-react";
+import logo from "../assets/logo.png";
 
 export default function LandingPage() {
   const [activeFaq, setActiveFaq] = useState<number | null>(null);
@@ -142,7 +143,7 @@ export default function LandingPage() {
       {/* Navigation */}
       <nav className="landing-nav glass-card">
         <div className="nav-logo">
-          <Sparkles color="var(--primary)" size={24} />
+          <img src={logo} alt="MyDesignGhar Logo" style={{ height: "32px", objectFit: "contain", marginRight: "4px" }} />
           <span>MyDesignGhar</span>
         </div>
         <div className="nav-links">
@@ -318,7 +319,7 @@ export default function LandingPage() {
       <footer className="landing-footer">
         <div className="footer-content">
           <div className="footer-logo">
-            <Sparkles color="var(--primary)" size={20} />
+            <img src={logo} alt="MyDesignGhar Logo" style={{ height: "24px", objectFit: "contain", marginRight: "4px" }} />
             <span>MyDesignGhar</span>
           </div>
           <p>&copy; {new Date().getFullYear()} MyDesignGhar. All rights reserved.</p>
