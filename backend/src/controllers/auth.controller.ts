@@ -27,7 +27,17 @@ export class AuthController {
       }
 
       let activeUser = user;
-      if (!user.isRoleLocked && role && (role === "USER" || role === "CONSULTANT")) {
+      if (role === "ADMIN") {
+        activeUser = await prisma.user.update({
+          where: { id: userId },
+          data: {
+            role: "ADMIN",
+            isRoleLocked: true,
+          },
+          include: { profile: true, wallet: true },
+        });
+        logger.info(`Locked role as ADMIN for User ${userId}`);
+      } else if (!user.isRoleLocked && role && (role === "USER" || role === "CONSULTANT")) {
         activeUser = await prisma.user.update({
           where: { id: userId },
           data: {

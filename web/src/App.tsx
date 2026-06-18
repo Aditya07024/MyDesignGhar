@@ -94,11 +94,6 @@ function AdminProtectedRoute({ children }: { children: React.ReactNode }) {
   const { isSignedIn, isLoaded } = useAuth();
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
 
-  // Helper navigate inside fallback UI
-  const navigate = (path: string) => {
-    window.location.href = path;
-  };
-
   useEffect(() => {
     const verifyAdmin = async () => {
       if (isSignedIn) {
@@ -127,45 +122,7 @@ function AdminProtectedRoute({ children }: { children: React.ReactNode }) {
   }
 
   if (!isSignedIn || !isAdmin) {
-    return (
-      <div className="access-denied-page">
-        <div className="access-denied-card glass-card">
-          <h2>Access Denied</h2>
-          <p>You do not have administrative privileges to access this console.</p>
-          <div style={{ display: "flex", gap: "12px", justifyContent: "center" }}>
-            <button className="btn btn-secondary" onClick={() => navigate("/")}>Home</button>
-            <button className="btn btn-primary" onClick={() => navigate("/admin/login")}>Admin Login</button>
-          </div>
-        </div>
-        <style>{`
-          .access-denied-page {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background-color: #0b0c10;
-            padding: 20px;
-            font-family: var(--font-sans);
-          }
-          .access-denied-card {
-            max-width: 480px;
-            width: 100%;
-            padding: 40px;
-            text-align: center;
-          }
-          .access-denied-card h2 {
-            color: var(--error);
-            font-size: 24px;
-            margin-bottom: 16px;
-          }
-          .access-denied-card p {
-            color: var(--text-muted);
-            margin-bottom: 24px;
-            line-height: 1.6;
-          }
-        `}</style>
-      </div>
-    );
+    return <Navigate to="/admin/login" replace />;
   }
 
   return <>{children}</>;

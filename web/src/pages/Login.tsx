@@ -33,6 +33,13 @@ export default function Login({ isAdminOnly = false }: LoginProps) {
           if (token) {
             setSessionToken(token);
           }
+          if (isAdminOnly) {
+            const syncRes = await AuthService.sync({ role: "ADMIN" });
+            if (syncRes.user?.role === "ADMIN") {
+              navigate("/admin");
+              return;
+            }
+          }
           const res = await AuthService.getMe();
           const role = res.user?.role;
           if (role === "CONSULTANT") {
@@ -50,7 +57,7 @@ export default function Login({ isAdminOnly = false }: LoginProps) {
       }
     };
     handleRedirect();
-  }, [isSignedIn, navigate, getToken]);
+  }, [isSignedIn, navigate, getToken, isAdminOnly]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,7 +98,7 @@ export default function Login({ isAdminOnly = false }: LoginProps) {
           }
           
           // Sync with the backend and check role
-          const syncRes = await AuthService.sync({ role: roleType === "CONSULTANT" ? "CONSULTANT" : undefined });
+          const syncRes = await AuthService.sync({ role: roleType });
           const userRole = syncRes.user?.role;
           
           if (roleType === "CONSULTANT" && userRole === "CONSULTANT") {

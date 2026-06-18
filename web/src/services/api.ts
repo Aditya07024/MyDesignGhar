@@ -36,7 +36,7 @@ apiClient.interceptors.response.use(
 );
 
 export const AuthService = {
-  async sync(data?: { referralCode?: string; role?: "USER" | "CONSULTANT" }) {
+  async sync(data?: { referralCode?: string; role?: "USER" | "CONSULTANT" | "ADMIN" }) {
     const res = await apiClient.post("/auth/sync", data);
     return res.data;
   },
