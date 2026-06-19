@@ -35,9 +35,9 @@ export async function authenticate(req: AuthenticatedRequest, res: Response, nex
     if (!user) {
       // Lazy-create user in PostgreSQL using details from Clerk
       try {
+        // Fetch Clerk user details OUTSIDE the transaction (slow network call)
         const clerkUser = await clerkClient.users.getUser(clerkId);
         
-        // Extract phone number: prioritize primary or first, fallback to mock/random format if missing
         const hasRealPhone = clerkUser.phoneNumbers && clerkUser.phoneNumbers.length > 0;
         const phone = clerkUser.phoneNumbers?.[0]?.phoneNumber || `+91${Math.floor(1000000000 + Math.random() * 9000000000)}`;
         const email = clerkUser.emailAddresses?.[0]?.emailAddress || null;
@@ -45,41 +45,76 @@ export async function authenticate(req: AuthenticatedRequest, res: Response, nex
         const avatarUrl = clerkUser.imageUrl || null;
         const referralCode = `MDG-${crypto.randomBytes(3).toString("hex").toUpperCase()}`;
 
-        user = await prisma.$transaction(async (tx: any) => {
-          // Double check in transaction to prevent concurrency conflicts
-          const existing = await tx.user.findUnique({
-            where: { clerkId },
+        // Check for existing users by email/phone OUTSIDE the transaction
+        let existingByEmail = null;
+        if (email) {
+          existingByEmail = await prisma.user.findUnique({
+            where: { email },
             include: { profile: true, wallet: true },
           });
-          if (existing) return existing;
+        }
 
-          return await tx.user.create({
-            data: {
-              clerkId,
-              phone,
-              email,
-              referralCode,
-              isPhoneVerified: !!hasRealPhone,
-              profile: {
-                create: {
-                  fullName,
-                  avatarUrl,
-                },
-              },
-              wallet: {
-                create: {
-                  balance: 0.0,
-                },
-              },
-            },
-            include: {
-              profile: true,
-              wallet: true,
-            },
+        if (existingByEmail) {
+          // Link this Clerk account to the existing user by updating their clerkId
+          logger.info(`Linking Clerk ID ${clerkId} to existing user (matched by email: ${email})`);
+          user = await prisma.user.update({
+            where: { id: existingByEmail.id },
+            data: { clerkId },
+            include: { profile: true, wallet: true },
           });
-        });
+        } else {
+          // Check by phone to avoid phone unique constraint conflicts
+          const existingByPhone = await prisma.user.findUnique({
+            where: { phone },
+            include: { profile: true, wallet: true },
+          });
 
-        logger.info(`Lazy-created local user record for Clerk ID: ${clerkId}`);
+          if (existingByPhone) {
+            logger.info(`Linking Clerk ID ${clerkId} to existing user (matched by phone: ${phone})`);
+            user = await prisma.user.update({
+              where: { id: existingByPhone.id },
+              data: { clerkId },
+              include: { profile: true, wallet: true },
+            });
+          } else {
+            // No existing user found — create a new one atomically
+            user = await prisma.$transaction(async (tx: any) => {
+              // Double check inside transaction to prevent concurrency conflicts
+              const existing = await tx.user.findUnique({
+                where: { clerkId },
+                include: { profile: true, wallet: true },
+              });
+              if (existing) return existing;
+
+              return await tx.user.create({
+                data: {
+                  clerkId,
+                  phone,
+                  email,
+                  referralCode,
+                  isPhoneVerified: !!hasRealPhone,
+                  profile: {
+                    create: {
+                      fullName,
+                      avatarUrl,
+                    },
+                  },
+                  wallet: {
+                    create: {
+                      balance: 0.0,
+                    },
+                  },
+                },
+                include: {
+                  profile: true,
+                  wallet: true,
+                },
+              });
+            });
+          }
+        }
+
+        logger.info(`Lazy-created/linked local user record for Clerk ID: ${clerkId}`);
       } catch (err: any) {
         try {
           const retryUser = await prisma.user.findUnique({

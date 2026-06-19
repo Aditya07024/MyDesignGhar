@@ -223,6 +223,7 @@ a {
   flex-direction: column;
   padding: 30px 24px;
   z-index: 100;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s ease;
 }
 
 .main-content {
@@ -230,19 +231,202 @@ a {
   flex: 1;
   padding: 40px;
   max-width: 1400px;
+  transition: margin-left 0.3s ease;
 }
 
+/* Mobile menu toggle button */
+.mobile-menu-toggle {
+  display: none;
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 200;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.mobile-menu-toggle:hover {
+  background: var(--primary);
+  color: #fff;
+}
+
+.mobile-menu-toggle .hamburger-icon {
+  width: 20px;
+  height: 14px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.mobile-menu-toggle .hamburger-icon span {
+  display: block;
+  width: 100%;
+  height: 2px;
+  background: var(--text);
+  border-radius: 2px;
+  transition: all 0.3s ease;
+}
+
+.mobile-menu-toggle:hover .hamburger-icon span {
+  background: #fff;
+}
+
+/* Sidebar overlay backdrop */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 90;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.sidebar-overlay.active {
+  opacity: 1;
+  pointer-events: all;
+}
+
+/* Sidebar close button (mobile) */
+.sidebar-close {
+  display: none;
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.05);
+  border: none;
+  cursor: pointer;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: 18px;
+  transition: all 0.2s ease;
+}
+
+.sidebar-close:hover {
+  background: rgba(225, 29, 72, 0.1);
+  color: var(--error);
+}
+
+/* Tablet: icon-only sidebar */
 @media (max-width: 1024px) {
   .sidebar {
     width: 80px;
     padding: 30px 10px;
     align-items: center;
   }
-  .sidebar .logo-text, .sidebar .nav-label, .sidebar .user-details {
+  .sidebar .logo-text,
+  .sidebar .nav-label,
+  .sidebar .user-details,
+  .sidebar .profile-info {
     display: none;
+  }
+  .sidebar .consultant-profile-card {
+    padding: 10px;
+    justify-content: center;
   }
   .main-content {
     margin-left: 80px;
     padding: 24px;
+  }
+}
+
+/* Mobile: off-canvas sidebar overlay */
+@media (max-width: 768px) {
+  .mobile-menu-toggle {
+    display: flex;
+  }
+
+  .sidebar-close {
+    display: flex;
+  }
+
+  .sidebar-overlay {
+    display: block;
+  }
+
+  .sidebar {
+    width: var(--sidebar-width);
+    transform: translateX(-100%);
+    padding: 30px 24px;
+    align-items: stretch;
+    box-shadow: 8px 0 32px rgba(0, 0, 0, 0.15);
+    background: var(--card-solid);
+  }
+
+  .sidebar.open {
+    transform: translateX(0);
+  }
+
+  /* Restore hidden elements on mobile overlay */
+  .sidebar.open .logo-text,
+  .sidebar.open .nav-label,
+  .sidebar.open .profile-info {
+    display: flex;
+  }
+
+  .sidebar.open .profile-info {
+    flex-direction: column;
+  }
+
+  .sidebar.open .consultant-profile-card {
+    padding: 16px;
+    justify-content: flex-start;
+  }
+
+  .main-content {
+    margin-left: 0;
+    padding: 20px;
+    padding-top: 72px; /* space for hamburger button */
+  }
+
+  .dashboard-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .dashboard-header h1 {
+    font-size: 24px !important;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .dashboard-main-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .form-row {
+    flex-direction: column;
+    gap: 0 !important;
+  }
+
+  .search-box {
+    width: 100% !important;
+  }
+
+  .consultant-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .tab-section {
+    padding: 20px !important;
   }
 }

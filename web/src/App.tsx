@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { ClerkProvider, useAuth } from "@clerk/clerk-react";
+import { ClerkProvider, useAuth, useClerk } from "@clerk/clerk-react";
 import { setSessionToken, AuthService } from "./services/api";
 import LandingPage from "./pages/LandingPage";
 import Login from "./pages/Login";
@@ -18,6 +18,7 @@ if (!CLERK_PUBLISHABLE_KEY) {
 // Clerk Auth Token Synchronization Wrapper
 function ClerkAuthWrapper({ children }: { children: React.ReactNode }) {
   const { getToken, isLoaded, isSignedIn } = useAuth();
+  const { signOut } = useClerk();
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
@@ -28,9 +29,17 @@ function ClerkAuthWrapper({ children }: { children: React.ReactNode }) {
           setSessionToken(token);
         } catch (err) {
           console.error("Failed to sync Clerk token:", err);
+          // Token fetch failed — session may be stale, sign out to clear it
+          try {
+            await signOut();
+          } catch (_) { /* ignore sign-out errors */ }
+          setSessionToken(null);
+          localStorage.removeItem("mdg_user_role");
         }
       } else {
         setSessionToken(null);
+        // Clear cached role when not signed in
+        localStorage.removeItem("mdg_user_role");
       }
       setReady(true);
     };
@@ -38,7 +47,7 @@ function ClerkAuthWrapper({ children }: { children: React.ReactNode }) {
     if (isLoaded) {
       syncToken();
     }
-  }, [isLoaded, isSignedIn, getToken]);
+  }, [isLoaded, isSignedIn, getToken, signOut]);
 
   if (!isLoaded || !ready) {
     return (

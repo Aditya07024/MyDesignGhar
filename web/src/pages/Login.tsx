@@ -17,46 +17,74 @@ export default function Login({ isAdminOnly = false }: LoginProps) {
   const [roleType] = useState<"CONSULTANT" | "ADMIN">(
     isAdminOnly ? "ADMIN" : "CONSULTANT"
   );
-  const [identifier, setIdentifier] = useState(""); // Email or Phone number
+  const [identifier, setIdentifier] = useState(""); // Email address
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // Helper: redirect based on role
+  const redirectByRole = (role: string) => {
+    if (role === "CONSULTANT") {
+      navigate("/consultant/dashboard");
+    } else if (role === "ADMIN") {
+      navigate("/admin");
+    } else {
+      navigate("/consultant/signup");
+    }
+  };
+
   // Auto-redirect signed-in users (including returning OAuth users)
   useEffect(() => {
+    let cancelled = false;
+
     const handleRedirect = async () => {
-      if (isSignedIn) {
-        try {
-          const token = await getToken();
-          if (token) {
-            setSessionToken(token);
-          }
-          if (isAdminOnly) {
-            const syncRes = await AuthService.sync({ role: "ADMIN" });
-            if (syncRes.user?.role === "ADMIN") {
-              navigate("/admin");
-              return;
-            }
-          }
-          const res = await AuthService.getMe();
-          const role = res.user?.role;
-          if (role === "CONSULTANT") {
-            navigate("/consultant/dashboard");
-          } else if (role === "ADMIN") {
+      if (!isSignedIn) return;
+
+      try {
+        const token = await getToken();
+        if (!token) return;
+        if (cancelled) return;
+        setSessionToken(token);
+
+        // Try backend first to get the authoritative role
+        if (isAdminOnly) {
+          const syncRes = await AuthService.sync({ role: "ADMIN" });
+          if (!cancelled && syncRes.user?.role === "ADMIN") {
+            localStorage.setItem("mdg_user_role", "ADMIN");
             navigate("/admin");
-          } else {
-            // New OAuth users will have default USER role; redirect them to signup to complete profile
-            navigate("/consultant/signup");
+            return;
           }
-        } catch (err: any) {
-          console.error("Auto-redirect error:", err);
-          setError("Failed to resolve user dashboard profile.");
         }
+
+        const res = await AuthService.getMe();
+        if (cancelled) return;
+
+        const role = res.user?.role;
+        if (role) {
+          localStorage.setItem("mdg_user_role", role);
+        }
+        redirectByRole(role);
+      } catch (err: any) {
+        if (cancelled) return;
+        console.error("Auto-redirect error:", err);
+
+        // Backend is down — use cached role for instant redirect
+        const cachedRole = localStorage.getItem("mdg_user_role");
+        if (cachedRole) {
+          console.info("Backend unreachable, using cached role for redirect:", cachedRole);
+          redirectByRole(cachedRole);
+        }
+        // No cached role and backend is down — stay on login page silently
       }
     };
+
     handleRedirect();
+
+    return () => {
+      cancelled = true;
+    };
   }, [isSignedIn, navigate, getToken, isAdminOnly]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -76,11 +104,7 @@ export default function Login({ isAdminOnly = false }: LoginProps) {
     setLoading(true);
 
     try {
-      // If it's a 10-digit number, format as +91 phone number
-      let formattedId = identifier.trim();
-      if (/^\d{10}$/.test(formattedId)) {
-        formattedId = `+91${formattedId}`;
-      }
+      const formattedId = identifier.trim();
 
       const result = await signIn.create({
         identifier: formattedId,
@@ -169,14 +193,12 @@ export default function Login({ isAdminOnly = false }: LoginProps) {
 
         <form onSubmit={handleSubmit} className="auth-form">
           <div className="form-group">
-            <label className="form-label">
-              {roleType === "CONSULTANT" ? "Phone Number or Email" : "Email Address"}
-            </label>
+            <label className="form-label">Email Address</label>
             <div className="input-wrapper">
               <input
-                type="text"
+                type="email"
                 className="form-input"
-                placeholder={roleType === "CONSULTANT" ? "e.g., 9876543210" : "e.g., admin@mydesignghar.com"}
+                placeholder={roleType === "CONSULTANT" ? "e.g., consultant@mydesignghar.com" : "e.g., admin@mydesignghar.com"}
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
                 disabled={loading}
