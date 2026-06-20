@@ -160,8 +160,13 @@ export default function SignUp() {
   const handleProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!specialty || !experience || !price || !bio) {
+    if (!specialty.trim() || !experience || !price || !bio.trim()) {
       setError("Please fill out all consultant profile fields.");
+      return;
+    }
+
+    if (specialty.trim().length < 2) {
+      setError("Specialty description must be at least 2 characters.");
       return;
     }
 
@@ -210,7 +215,11 @@ export default function SignUp() {
       // 3. Redirect to Consultant Dashboard (pending approval)
       navigate("/consultant/dashboard");
     } catch (err: any) {
-      setError(err.response?.data?.message || "Failed to register consultant profile. Please contact support.");
+      const serverMsg = err.response?.data?.message;
+      const details = err.response?.data?.errors
+        ?.map((e: any) => `${e.field}: ${e.message}`)
+        .join(", ");
+      setError(details ? `Validation failed: ${details}` : (serverMsg || "Failed to register consultant profile. Please contact support."));
     } finally {
       setLoading(false);
     }
@@ -222,7 +231,7 @@ export default function SignUp() {
       <div className="auth-card glass-card">
         <div className="auth-header">
           <div className="auth-logo">
-            <img src={logo} alt="MyDesignGhar Logo" style={{ width: "100%", height: "100%", objectFit: "contain", padding: "6px" }} />
+            <img src={logo} alt="MydesignGhar Logo" style={{ width: "100%", height: "100%", objectFit: "contain", padding: "6px" }} />
           </div>
           <h2>Become a Consultant</h2>
           <p>
@@ -275,7 +284,7 @@ export default function SignUp() {
                 <input
                   type="email"
                   className="form-input icon-input"
-                  placeholder="e.g. priya@mydesignghar.com"
+                  placeholder="e.g. priya@mydesignghr.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={loading}

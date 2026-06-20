@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useClerk } from "@clerk/clerk-react";
-import { Users, Wallet, Star, Calendar, Clock, Video, BookOpen, LogOut, ShieldAlert } from "lucide-react";
+import { Users, Wallet, Star, Calendar, Clock, Video, BookOpen, LogOut, ShieldAlert, Award } from "lucide-react";
 import { AuthService, ConsultantService } from "../services/api";
 import logo from "../assets/logo.png";
 
@@ -19,6 +19,7 @@ export default function ConsultantDashboard() {
   const navigate = useNavigate();
   const { signOut } = useClerk();
 
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [dbUser, setDbUser] = useState<any>(null);
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -29,6 +30,15 @@ export default function ConsultantDashboard() {
   const [completePhone, setCompletePhone] = useState("");
   const [modalErr, setModalErr] = useState("");
   const [modalLoading, setModalLoading] = useState(false);
+
+  // Consultant Registration form state (for cases where role=CONSULTANT but no profile exists)
+  const [specialty, setSpecialty] = useState("");
+  const [experience, setExperience] = useState("");
+  const [price, setPrice] = useState("");
+  const [bio, setBio] = useState("");
+  const [portfolioUrl, setPortfolioUrl] = useState("");
+  const [regErr, setRegErr] = useState("");
+  const [regLoading, setRegLoading] = useState(false);
 
   // Scheduler Form State
   const formatDate = (date: Date) => {
@@ -75,9 +85,13 @@ export default function ConsultantDashboard() {
         setShowProfileModal(false);
       }
 
-      // Fetch sessions/bookings
-      const bookingsRes = await ConsultantService.listBookings();
-      setBookings(bookingsRes.bookings || []);
+      // Fetch sessions/bookings if profile exists
+      if (meRes.user.consultantProfile) {
+        const bookingsRes = await ConsultantService.listBookings();
+        setBookings(bookingsRes.bookings || []);
+      } else {
+        setBookings([]);
+      }
     } catch (err: any) {
       console.error("Failed to load consultant dashboard:", err);
     } finally {
@@ -128,6 +142,69 @@ export default function ConsultantDashboard() {
     }
   };
 
+  // Submit Consultant Application Profile
+  const handleRegisterProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!specialty.trim() || !experience || !price || !bio.trim()) {
+      setRegErr("Please fill out all consultant profile fields.");
+      return;
+    }
+
+    if (specialty.trim().length < 2) {
+      setRegErr("Specialty description must be at least 2 characters.");
+      return;
+    }
+
+    const expVal = parseInt(experience);
+    if (isNaN(expVal) || !/^\d+$/.test(experience) || expVal < 0) {
+      setRegErr("Experience must be a valid non-negative integer number of years.");
+      return;
+    }
+
+    const priceVal = parseFloat(price);
+    if (isNaN(priceVal) || priceVal <= 0) {
+      setRegErr("Consultation fee must be a valid positive number.");
+      return;
+    }
+
+    if (bio.trim().length < 10) {
+      setRegErr("Bio/Cover Letter must be at least 10 characters.");
+      return;
+    }
+
+    let finalUrls: string[] = [];
+    if (portfolioUrl.trim()) {
+      let url = portfolioUrl.trim();
+      if (!/^https?:\/\//i.test(url)) {
+        url = `https://${url}`;
+      }
+      finalUrls = [url];
+    }
+
+    setRegErr("");
+    setRegLoading(true);
+    try {
+      await ConsultantService.register({
+        specialty: specialty.trim(),
+        experience: expVal,
+        bio: bio.trim(),
+        price: priceVal,
+        portfolioUrls: finalUrls,
+      });
+
+      alert("Consultant profile submitted successfully! It is pending admin approval.");
+      await loadData();
+    } catch (err: any) {
+      const serverMsg = err.response?.data?.message;
+      const details = err.response?.data?.errors
+        ?.map((e: any) => `${e.field}: ${e.message}`)
+        .join(", ");
+      setRegErr(details ? `Validation failed: ${details}` : (serverMsg || "Failed to register consultant profile. Try again."));
+    } finally {
+      setRegLoading(false);
+    }
+  };
+
   // Add availability slots
   const handleAddSlots = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -139,50 +216,36 @@ export default function ConsultantDashboard() {
       return;
     }
 
-    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-    if (!dateRegex.test(startDate.trim()) || !dateRegex.test(endDate.trim())) {
-      setScheduleErr("Dates must be in YYYY-MM-DD format.");
-      return;
-    }
-
-    if (selectedDays.length === 0) {
-      setScheduleErr("Please select at least one weekday.");
-      return;
-    }
-
-    const start = new Date(startDate.trim());
-    const end = new Date(endDate.trim());
-    if (isNaN(start.getTime()) || isNaN(end.getTime()) || start > end) {
-      setScheduleErr("Invalid date range selected.");
-      return;
-    }
-
     setScheduleLoading(true);
     try {
+      // Loop over dates from start to end, checking if day is selected
+      const start = new Date(startDate);
+      const end = new Date(endDate);
       const slots: { date: string; timeSlot: string }[] = [];
-      const current = new Date(start);
-      while (current <= end) {
-        const day = current.getDay();
-        if (selectedDays.includes(day)) {
+
+      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        if (selectedDays.includes(d.getDay())) {
+          // Format date as local ISO string yyyy-mm-dd
+          const yr = d.getFullYear();
+          const mo = String(d.getMonth() + 1).padStart(2, "0");
+          const dy = String(d.getDate()).padStart(2, "0");
           slots.push({
-            date: formatDate(current),
+            date: `${yr}-${mo}-${dy}`,
             timeSlot: slotTime.trim(),
           });
         }
-        current.setDate(current.getDate() + 1);
       }
 
       if (slots.length === 0) {
-        setScheduleErr("No matching weekdays found in the selected range.");
+        setScheduleErr("No matching days found in selected range.");
         setScheduleLoading(false);
         return;
       }
 
       await ConsultantService.addAvailabilitySlots(slots);
       setScheduleSuccess(`Successfully added ${slots.length} availability slots!`);
-      
-      // Reset time slot input
       setSlotTime("");
+      await loadData();
     } catch (err: any) {
       setScheduleErr(err.response?.data?.message || "Failed to add slots. Try again.");
     } finally {
@@ -256,11 +319,26 @@ export default function ConsultantDashboard() {
 
   return (
     <div className="dashboard-layout">
+      {/* Mobile Hamburger Toggle */}
+      <button className="mobile-menu-toggle" onClick={() => setSidebarOpen(true)}>
+        <div className="hamburger-icon">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      </button>
+
+      {/* Overlay Backdrop */}
+      <div className={`sidebar-overlay ${sidebarOpen ? "active" : ""}`} onClick={() => setSidebarOpen(false)} />
+
       {/* Sidebar Navigation */}
-      <aside className="sidebar glass-panel">
+      <aside className={`sidebar glass-panel ${sidebarOpen ? "open" : ""}`}>
+        {/* Close button for mobile */}
+        <button className="sidebar-close" onClick={() => setSidebarOpen(false)}>×</button>
+
         <div className="sidebar-logo">
-          <img src={logo} alt="MyDesignGhar Logo" style={{ height: "32px", objectFit: "contain", marginRight: "4px" }} />
-          <span className="logo-text">MyDesignGhar</span>
+          <img src={logo} alt="MydesignGhar Logo" style={{ height: "32px", objectFit: "contain", marginRight: "4px" }} />
+          <span className="logo-text">MydesignGhar</span>
         </div>
 
         <div className="consultant-profile-card">
@@ -274,7 +352,7 @@ export default function ConsultantDashboard() {
         </div>
 
         <nav className="sidebar-nav">
-          <button className="nav-item active">
+          <button className="nav-item active" onClick={() => setSidebarOpen(false)}>
             <Calendar size={18} />
             <span className="nav-label">Dashboard</span>
           </button>
@@ -287,214 +365,383 @@ export default function ConsultantDashboard() {
       </aside>
 
       {/* Main Panel Content */}
-      <main className="main-content">
-        <header className="dashboard-header">
-          <div>
-            <h1>Namaste, {dbUser?.fullName || "Consultant"}! 👋</h1>
-            <p className="subtitle">Here is your schedule and client booking panel.</p>
-          </div>
-          <div className="portal-badge">Consultant Portal</div>
-        </header>
-
-        {/* Stats Grid */}
-        <section className="stats-grid animate-fade-in">
-          <div className="stat-card glass-card">
-            <Users size={20} className="stat-icon" />
-            <div className="stat-value">{bookings.length}</div>
-            <div className="stat-title">Total Bookings</div>
-          </div>
-          <div className="stat-card glass-card">
-            <Wallet size={20} className="stat-icon" />
-            <div className="stat-value">₹{totalEarnings.toLocaleString("en-IN")}</div>
-            <div className="stat-title">Earnings</div>
-          </div>
-          <div className="stat-card glass-card">
-            <Star size={20} className="stat-icon" />
-            <div className="stat-value">5.0</div>
-            <div className="stat-title">Rating</div>
-          </div>
-        </section>
-
-        {/* Dashboard Grid */}
-        <div className="dashboard-main-grid animate-fade-in">
-          {/* Availability Scheduler */}
-          <section className="dashboard-section glass-card">
-            <div className="section-header-box">
-              <Calendar size={20} color="var(--primary)" />
-              <h2>Schedule Availability Slots</h2>
+      {!dbUser?.consultantProfile ? (
+        <main className="main-content">
+          <header className="dashboard-header">
+            <div>
+              <h1>Namaste, {dbUser?.fullName || "Consultant"}! 👋</h1>
+              <p className="subtitle">Please complete your professional consultant profile to proceed.</p>
             </div>
-            
-            <form onSubmit={handleAddSlots} className="scheduler-form">
-              {scheduleErr && <div className="schedule-error">{scheduleErr}</div>}
-              {scheduleSuccess && <div className="schedule-success">{scheduleSuccess}</div>}
+            <div className="portal-badge badge-pending">Registration Incomplete</div>
+          </header>
 
-              <div className="form-row">
-                <div className="form-group flex-1">
-                  <label className="form-label">Start Date *</label>
+          <div className="registration-form-container animate-fade-in" style={{ maxWidth: "600px", marginTop: "24px" }}>
+            <div className="glass-card" style={{ padding: "32px" }}>
+              <h2 style={{ marginBottom: "20px", display: "flex", alignItems: "center", gap: "10px" }}>
+                <Award color="var(--primary)" /> Professional Details
+              </h2>
+              <form onSubmit={handleRegisterProfile}>
+                {regErr && <div className="schedule-error" style={{ marginBottom: "16px" }}>{regErr}</div>}
+                
+                <div className="form-group">
+                  <label className="form-label">Design Specialty *</label>
                   <input
-                    type="date"
+                    type="text"
                     className="form-input"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
-                    disabled={scheduleLoading}
+                    placeholder="e.g. Luxury & Modern, Rajasthani Heritage, Minimalist"
+                    value={specialty}
+                    onChange={(e) => setSpecialty(e.target.value)}
+                    disabled={regLoading}
                   />
                 </div>
-                <div className="form-group flex-1">
-                  <label className="form-label">End Date *</label>
-                  <input
-                    type="date"
-                    className="form-input"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    disabled={scheduleLoading}
-                  />
-                </div>
-              </div>
 
-              <div className="form-group">
-                <label className="form-label">Active Weekdays *</label>
-                <div className="days-row">
-                  {WEEKDAYS.map((day) => {
-                    const isSelected = selectedDays.includes(day.value);
-                    return (
-                      <button
-                        key={day.value}
-                        type="button"
-                        className={`day-circle ${isSelected ? "selected" : ""}`}
-                        onClick={() => {
-                          if (isSelected) {
-                            setSelectedDays(selectedDays.filter((d) => d !== day.value));
-                          } else {
-                            setSelectedDays([...selectedDays, day.value]);
-                          }
-                        }}
-                        disabled={scheduleLoading}
-                      >
-                        {day.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Time Slot (e.g. 10:00 AM) *</label>
-                <input
-                  type="text"
-                  className="form-input"
-                  placeholder="e.g., 10:00 AM, 02:30 PM"
-                  value={slotTime}
-                  onChange={(e) => setSlotTime(e.target.value)}
-                  disabled={scheduleLoading}
-                />
-              </div>
-
-              <button type="submit" className="btn btn-primary" disabled={scheduleLoading}>
-                {scheduleLoading ? "Adding Slots..." : "Add Slots"}
-              </button>
-            </form>
-          </section>
-
-          {/* Schedule Sessions List */}
-          <section className="dashboard-section glass-card">
-            <div className="section-header-box">
-              <Clock size={20} color="var(--primary)" />
-              <h2>My Schedule ({bookings.length})</h2>
-            </div>
-
-            <div className="sessions-list">
-              {bookings.length === 0 ? (
-                <div className="empty-state">
-                  <p>No upcoming client bookings scheduled.</p>
-                </div>
-              ) : (
-                bookings.map((booking) => (
-                  <div key={booking.id} className="booking-card glass-card">
-                    <div className="booking-card-header">
-                      <div>
-                        <h3>{booking.name || "Client"}</h3>
-                        <p className="booking-datetime">
-                          {booking.date.split("T")[0]} | {booking.time}
-                        </p>
-                      </div>
-                      <span className={`badge ${booking.status === "CONFIRMED" ? "badge-approved" : "badge-pending"}`}>
-                        {booking.status}
-                      </span>
-                    </div>
-
-                    {booking.notes && (
-                      <div className="booking-notes-display">
-                        <strong>Session Notes:</strong>
-                        <p>{booking.notes}</p>
-                      </div>
-                    )}
-
-                    <div className="booking-actions">
-                      {booking.dailyRoomUrl && (
-                        <button
-                          className="btn btn-primary btn-sm"
-                          onClick={() => {
-                            // Extract call URL path
-                            const path = booking.dailyRoomUrl;
-                            navigate(path);
-                          }}
-                        >
-                          <Video size={16} /> Join Consultation
-                        </button>
-                      )}
-
-                      {activeNotesBookingId === booking.id ? (
-                        <div className="notes-editor-box">
-                          {notesErr && <div className="notes-error">{notesErr}</div>}
-                          <textarea
-                            className="form-input"
-                            rows={3}
-                            placeholder="Enter consultation details, budget notes, design ideas..."
-                            value={sessionNotes}
-                            onChange={(e) => setSessionNotes(e.target.value)}
-                            disabled={notesLoading}
-                          />
-                          <div className="notes-editor-actions">
-                            <button
-                              type="button"
-                              className="btn btn-secondary btn-sm"
-                              onClick={() => {
-                                setActiveNotesBookingId(null);
-                                setSessionNotes("");
-                              }}
-                              disabled={notesLoading}
-                            >
-                              Cancel
-                            </button>
-                            <button
-                              type="button"
-                              className="btn btn-primary btn-sm"
-                              onClick={() => handleSaveNotes(booking.id)}
-                              disabled={notesLoading}
-                            >
-                              {notesLoading ? "Saving..." : "Save Notes"}
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <button
-                          className="btn btn-secondary btn-sm"
-                          onClick={() => {
-                            setActiveNotesBookingId(booking.id);
-                            setSessionNotes(booking.notes || "");
-                          }}
-                        >
-                          <BookOpen size={16} /> {booking.notes ? "Update Notes" : "Add Note"}
-                        </button>
-                      )}
-                    </div>
+                <div className="form-row" style={{ display: "flex", gap: "16px" }}>
+                  <div className="form-group" style={{ flex: 1 }}>
+                    <label className="form-label">Experience (Years) *</label>
+                    <input
+                      type="number"
+                      className="form-input"
+                      placeholder="e.g. 5"
+                      value={experience}
+                      onChange={(e) => setExperience(e.target.value)}
+                      disabled={regLoading}
+                    />
                   </div>
-                ))
-              )}
+                  <div className="form-group" style={{ flex: 1 }}>
+                    <label className="form-label">Consultation Fee (₹/hr) *</label>
+                    <input
+                      type="number"
+                      className="form-input"
+                      placeholder="e.g. 1500"
+                      value={price}
+                      onChange={(e) => setPrice(e.target.value)}
+                      disabled={regLoading}
+                    />
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Bio / Cover Letter *</label>
+                  <textarea
+                    className="form-input"
+                    style={{ minHeight: "120px", resize: "vertical" }}
+                    placeholder="Tell us about your design style, background, and the kind of homes you love building."
+                    value={bio}
+                    onChange={(e) => setBio(e.target.value)}
+                    disabled={regLoading}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Portfolio Image URL (Optional)</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="e.g. https://images.unsplash.com/photo-..."
+                    value={portfolioUrl}
+                    onChange={(e) => setPortfolioUrl(e.target.value)}
+                    disabled={regLoading}
+                  />
+                </div>
+
+                <button type="submit" className="btn btn-primary" style={{ width: "100%", marginTop: "12px" }} disabled={regLoading}>
+                  {regLoading ? "Submitting Application..." : "Submit Registration Application"}
+                </button>
+              </form>
+            </div>
+          </div>
+        </main>
+      ) : (
+        <main className="main-content">
+          <header className="dashboard-header">
+            <div>
+              <h1>Namaste, {dbUser?.fullName || "Consultant"}! 👋</h1>
+              <p className="subtitle">Here is your schedule and client booking panel.</p>
+            </div>
+            <div className="portal-badge">Consultant Portal</div>
+          </header>
+
+          {/* Status alert banner */}
+          {dbUser.consultantProfile.status !== "APPROVED" && (
+            <div className="approval-alert-banner" style={{
+              background: dbUser.consultantProfile.status === "PENDING" ? "rgba(245, 158, 11, 0.1)" : "rgba(239, 68, 68, 0.1)",
+              border: `1px solid ${dbUser.consultantProfile.status === "PENDING" ? "var(--primary)" : "var(--error)"}`,
+              borderRadius: "12px",
+              padding: "16px 20px",
+              marginBottom: "24px",
+              display: "flex",
+              alignItems: "flex-start",
+              gap: "12px"
+            }}>
+              <ShieldAlert size={20} color={dbUser.consultantProfile.status === "PENDING" ? "var(--primary)" : "var(--error)"} style={{ marginTop: "2px", flexShrink: 0 }} />
+              <div>
+                <h4 style={{ margin: 0, fontWeight: "600", color: dbUser.consultantProfile.status === "PENDING" ? "var(--primary)" : "var(--error)" }}>
+                  Profile Status: {dbUser.consultantProfile.status}
+                </h4>
+                <p style={{ margin: "4px 0 0 0", fontSize: "14px", color: "var(--text-muted)", lineHeight: "1.4" }}>
+                  {dbUser.consultantProfile.status === "PENDING" && "Your professional application is currently pending admin approval. You can prepare and manage your availability slots below, but they will not be bookable by clients until your application is approved."}
+                  {dbUser.consultantProfile.status === "REJECTED" && "Your application has been rejected. Please contact administrator support to revise your details."}
+                  {dbUser.consultantProfile.status === "SUSPENDED" && "Your consultant portal privileges have been suspended. Please contact administrator support."}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Stats Grid */}
+          <section className="stats-grid animate-fade-in">
+            <div className="stat-card glass-card">
+              <Users size={20} className="stat-icon" />
+              <div className="stat-value">{bookings.length}</div>
+              <div className="stat-title">Total Bookings</div>
+            </div>
+            <div className="stat-card glass-card">
+              <Wallet size={20} className="stat-icon" />
+              <div className="stat-value">₹{totalEarnings.toLocaleString("en-IN")}</div>
+              <div className="stat-title">Earnings</div>
+            </div>
+            <div className="stat-card glass-card">
+              <Star size={20} className="stat-icon" />
+              <div className="stat-value">{(dbUser?.consultantProfile?.rating || 5.0).toFixed(1)}</div>
+              <div className="stat-title">Rating</div>
             </div>
           </section>
-        </div>
-      </main>
+
+          {/* Dashboard Grid */}
+          <div className="dashboard-main-grid animate-fade-in">
+            {/* Availability Scheduler */}
+            <section className="dashboard-section glass-card">
+              <div className="section-header-box">
+                <Calendar size={20} color="var(--primary)" />
+                <h2>Schedule Availability Slots</h2>
+              </div>
+              
+              <form onSubmit={handleAddSlots} className="scheduler-form">
+                {scheduleErr && <div className="schedule-error">{scheduleErr}</div>}
+                {scheduleSuccess && <div className="schedule-success">{scheduleSuccess}</div>}
+
+                <div className="form-row">
+                  <div className="form-group flex-1">
+                    <label className="form-label">Start Date *</label>
+                    <input
+                      type="date"
+                      className="form-input"
+                      value={startDate}
+                      onChange={(e) => setStartDate(e.target.value)}
+                      disabled={scheduleLoading}
+                    />
+                  </div>
+                  <div className="form-group flex-1">
+                    <label className="form-label">End Date *</label>
+                    <input
+                      type="date"
+                      className="form-input"
+                      value={endDate}
+                      onChange={(e) => setEndDate(e.target.value)}
+                      disabled={scheduleLoading}
+                    />
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Active Weekdays *</label>
+                  <div className="days-row">
+                    {WEEKDAYS.map((day) => {
+                      const isSelected = selectedDays.includes(day.value);
+                      return (
+                        <button
+                          key={day.value}
+                          type="button"
+                          className={`day-circle ${isSelected ? "selected" : ""}`}
+                          onClick={() => {
+                            if (isSelected) {
+                              setSelectedDays(selectedDays.filter((d) => d !== day.value));
+                            } else {
+                              setSelectedDays([...selectedDays, day.value]);
+                            }
+                          }}
+                          disabled={scheduleLoading}
+                        >
+                          {day.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Time Slot (e.g. 10:00 AM) *</label>
+                  <input
+                    type="text"
+                    className="form-input"
+                    placeholder="e.g., 10:00 AM, 02:30 PM"
+                    value={slotTime}
+                    onChange={(e) => setSlotTime(e.target.value)}
+                    disabled={scheduleLoading}
+                  />
+                </div>
+
+                <button type="submit" className="btn btn-primary" disabled={scheduleLoading}>
+                  {scheduleLoading ? "Adding Slots..." : "Add Slots"}
+                </button>
+              </form>
+
+              {/* My Availability Slots List */}
+              <div style={{ marginTop: "24px", paddingTop: "20px", borderTop: "1px solid var(--border)" }}>
+                <h3 style={{ fontSize: "16px", fontWeight: "700", marginBottom: "16px", display: "flex", alignItems: "center", gap: "8px" }}>
+                  <Calendar size={16} color="var(--primary)" />
+                  My Availability Slots ({dbUser?.consultantProfile?.availability?.length || 0})
+                </h3>
+                <div className="slots-grid" style={{ 
+                  display: "grid", 
+                  gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))", 
+                  gap: "10px", 
+                  maxHeight: "220px", 
+                  overflowY: "auto", 
+                  paddingRight: "6px" 
+                }}>
+                  {!dbUser?.consultantProfile?.availability || dbUser.consultantProfile.availability.length === 0 ? (
+                    <div className="empty-state" style={{ gridColumn: "1/-1", padding: "16px", textAlign: "center" }}>
+                      <p style={{ fontSize: "13px", color: "var(--text-muted)", margin: 0 }}>No availability slots created yet.</p>
+                    </div>
+                  ) : (
+                    dbUser.consultantProfile.availability.map((slot: any) => {
+                      const slotDate = new Date(slot.date).toLocaleDateString("en-IN", {
+                        day: "numeric",
+                        month: "short"
+                      });
+                      return (
+                        <div key={slot.id} className="slot-card-item" style={{
+                          background: slot.isBooked ? "rgba(239, 68, 68, 0.1)" : "rgba(255, 255, 255, 0.02)",
+                          border: `1px solid ${slot.isBooked ? "var(--error)" : "var(--border)"}`,
+                          borderRadius: "8px",
+                          padding: "10px",
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "4px"
+                        }}>
+                          <div style={{ fontSize: "13px", fontWeight: "600" }}>{slotDate}</div>
+                          <div style={{ fontSize: "11px", color: "var(--text-muted)", display: "flex", alignItems: "center", gap: "4px" }}>
+                            <Clock size={10} /> {slot.timeSlot}
+                          </div>
+                          <span style={{
+                            alignSelf: "flex-start",
+                            fontSize: "9px",
+                            fontWeight: "700",
+                            padding: "1px 6px",
+                            borderRadius: "3px",
+                            background: slot.isBooked ? "rgba(239, 68, 68, 0.15)" : "rgba(16, 185, 129, 0.1)",
+                            color: slot.isBooked ? "var(--error)" : "var(--primary)"
+                          }}>
+                            {slot.isBooked ? "Booked" : "Available"}
+                          </span>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            </section>
+
+            {/* Schedule Sessions List */}
+            <section className="dashboard-section glass-card">
+              <div className="section-header-box">
+                <Clock size={20} color="var(--primary)" />
+                <h2>My Schedule ({bookings.length})</h2>
+              </div>
+
+              <div className="sessions-list">
+                {bookings.length === 0 ? (
+                  <div className="empty-state">
+                    <p>No upcoming client bookings scheduled.</p>
+                  </div>
+                ) : (
+                  bookings.map((booking) => (
+                    <div key={booking.id} className="booking-card glass-card">
+                      <div className="booking-card-header">
+                        <div>
+                          <h3>{booking.name || "Client"}</h3>
+                          <p className="booking-datetime">
+                            {booking.date.split("T")[0]} | {booking.time}
+                          </p>
+                        </div>
+                        <span className={`badge ${booking.status === "CONFIRMED" ? "badge-approved" : "badge-pending"}`}>
+                          {booking.status}
+                        </span>
+                      </div>
+
+                      {booking.notes && (
+                        <div className="booking-notes-display">
+                          <strong>Session Notes:</strong>
+                          <p>{booking.notes}</p>
+                        </div>
+                      )}
+
+                      <div className="booking-actions">
+                        {booking.dailyRoomUrl && (
+                          <button
+                            className="btn btn-primary btn-sm"
+                            onClick={() => {
+                              const path = booking.dailyRoomUrl;
+                              navigate(path);
+                            }}
+                          >
+                            <Video size={16} /> Join Consultation
+                          </button>
+                        )}
+
+                        {activeNotesBookingId === booking.id ? (
+                          <div className="notes-editor-box">
+                            {notesErr && <div className="notes-error">{notesErr}</div>}
+                            <textarea
+                              className="form-input"
+                              rows={3}
+                              placeholder="Enter consultation details, budget notes, design ideas..."
+                              value={sessionNotes}
+                              onChange={(e) => setSessionNotes(e.target.value)}
+                              disabled={notesLoading}
+                            />
+                            <div className="notes-editor-actions">
+                              <button
+                                type="button"
+                                className="btn btn-secondary btn-sm"
+                                onClick={() => {
+                                  setActiveNotesBookingId(null);
+                                  setSessionNotes("");
+                                }}
+                                disabled={notesLoading}
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                type="button"
+                                className="btn btn-primary btn-sm"
+                                onClick={() => handleSaveNotes(booking.id)}
+                                disabled={notesLoading}
+                              >
+                                {notesLoading ? "Saving..." : "Save Notes"}
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <button
+                            className="btn btn-secondary btn-sm"
+                            onClick={() => {
+                              setActiveNotesBookingId(booking.id);
+                              setSessionNotes(booking.notes || "");
+                            }}
+                          >
+                            <BookOpen size={16} /> {booking.notes ? "Update Notes" : "Add Note"}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </section>
+          </div>
+        </main>
+      )}
 
       {/* Complete Profile Modal */}
       {showProfileModal && (

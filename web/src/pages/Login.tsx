@@ -179,13 +179,13 @@ export default function Login({ isAdminOnly = false }: LoginProps) {
       <div className="auth-card glass-card">
         <div className="auth-header">
           <div className="auth-logo">
-            <img src={logo} alt="MyDesignGhar Logo" style={{ width: "100%", height: "100%", objectFit: "contain", padding: "6px" }} />
+            <img src={logo} alt="MydesignGhar Logo" style={{ width: "100%", height: "100%", objectFit: "contain", padding: "6px" }} />
           </div>
           <h2>{roleType === "CONSULTANT" ? "Consultant Portal" : "Admin Panel"}</h2>
           <p>
             {roleType === "CONSULTANT" 
               ? "Access your appointments, earnings, and video calls." 
-              : "Administrative console for MyDesignGhar."}
+              : "Administrative console for MydesignGhar."}
           </p>
         </div>
 
@@ -198,7 +198,7 @@ export default function Login({ isAdminOnly = false }: LoginProps) {
               <input
                 type="email"
                 className="form-input"
-                placeholder={roleType === "CONSULTANT" ? "e.g., consultant@mydesignghar.com" : "e.g., admin@mydesignghar.com"}
+                placeholder={roleType === "CONSULTANT" ? "e.g., consultant@mydesignghr.com" : "e.g., admin@mydesignghr.com"}
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}
                 disabled={loading}

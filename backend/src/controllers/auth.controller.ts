@@ -19,7 +19,16 @@ export class AuthController {
 
       const user = await prisma.user.findUnique({
         where: { id: userId },
-        include: { profile: true, wallet: true },
+        include: {
+          profile: true,
+          wallet: true,
+          consultantProfile: {
+            include: {
+              reviews: { select: { rating: true } },
+              availability: { orderBy: { date: "asc" } }
+            }
+          }
+        },
       });
 
       if (!user) {
@@ -34,7 +43,16 @@ export class AuthController {
             role: "ADMIN",
             isRoleLocked: true,
           },
-          include: { profile: true, wallet: true },
+          include: {
+            profile: true,
+            wallet: true,
+            consultantProfile: {
+              include: {
+                reviews: { select: { rating: true } },
+                availability: { orderBy: { date: "asc" } }
+              }
+            }
+          },
         });
         logger.info(`Locked role as ADMIN for User ${userId}`);
       } else if (!user.isRoleLocked && role && (role === "USER" || role === "CONSULTANT")) {
@@ -44,7 +62,16 @@ export class AuthController {
             role: role as any,
             isRoleLocked: true,
           },
-          include: { profile: true, wallet: true },
+          include: {
+            profile: true,
+            wallet: true,
+            consultantProfile: {
+              include: {
+                reviews: { select: { rating: true } },
+                availability: { orderBy: { date: "asc" } }
+              }
+            }
+          },
         });
         logger.info(`Locked role as ${role} for User ${userId}`);
       }
@@ -71,6 +98,26 @@ export class AuthController {
           walletBalance: activeUser.wallet?.balance || 0,
           referralCode: activeUser.referralCode,
           isPhoneVerified: activeUser.isPhoneVerified,
+          consultantProfile: activeUser.consultantProfile ? {
+            id: activeUser.consultantProfile.id,
+            status: activeUser.consultantProfile.status,
+            isApproved: activeUser.consultantProfile.isApproved,
+            specialty: activeUser.consultantProfile.specialty,
+            experience: activeUser.consultantProfile.experience,
+            bio: activeUser.consultantProfile.bio,
+            price: activeUser.consultantProfile.price,
+            rating: (activeUser.consultantProfile as any).reviews && (activeUser.consultantProfile as any).reviews.length > 0
+              ? parseFloat(((activeUser.consultantProfile as any).reviews.reduce((acc: number, r: any) => acc + r.rating, 0) / (activeUser.consultantProfile as any).reviews.length).toFixed(1))
+              : 5.0,
+            availability: (activeUser.consultantProfile as any).availability
+              ? (activeUser.consultantProfile as any).availability.map((a: any) => ({
+                  id: a.id,
+                  date: a.date,
+                  timeSlot: a.timeSlot,
+                  isBooked: a.isBooked,
+                }))
+              : [],
+          } : null,
         },
       });
     } catch (error) {
@@ -86,7 +133,16 @@ export class AuthController {
       const userId = req.user!.id;
       const user = await prisma.user.findUnique({
         where: { id: userId },
-        include: { profile: true, wallet: true },
+        include: {
+          profile: true,
+          wallet: true,
+          consultantProfile: {
+            include: {
+              reviews: { select: { rating: true } },
+              availability: { orderBy: { date: "asc" } }
+            }
+          }
+        },
       });
 
       if (!user) {
@@ -103,6 +159,26 @@ export class AuthController {
           walletBalance: user.wallet?.balance || 0,
           referralCode: user.referralCode,
           isPhoneVerified: user.isPhoneVerified,
+          consultantProfile: user.consultantProfile ? {
+            id: user.consultantProfile.id,
+            status: user.consultantProfile.status,
+            isApproved: user.consultantProfile.isApproved,
+            specialty: user.consultantProfile.specialty,
+            experience: user.consultantProfile.experience,
+            bio: user.consultantProfile.bio,
+            price: user.consultantProfile.price,
+            rating: (user.consultantProfile as any).reviews && (user.consultantProfile as any).reviews.length > 0
+              ? parseFloat(((user.consultantProfile as any).reviews.reduce((acc: number, r: any) => acc + r.rating, 0) / (user.consultantProfile as any).reviews.length).toFixed(1))
+              : 5.0,
+            availability: (user.consultantProfile as any).availability
+              ? (user.consultantProfile as any).availability.map((a: any) => ({
+                  id: a.id,
+                  date: a.date,
+                  timeSlot: a.timeSlot,
+                  isBooked: a.isBooked,
+                }))
+              : [],
+          } : null,
         },
       });
     } catch (error) {
@@ -157,7 +233,16 @@ export class AuthController {
 
       const updatedUser = await prisma.user.findUnique({
         where: { id: userId },
-        include: { profile: true, wallet: true },
+        include: {
+          profile: true,
+          wallet: true,
+          consultantProfile: {
+            include: {
+              reviews: { select: { rating: true } },
+              availability: { orderBy: { date: "asc" } }
+            }
+          }
+        },
       });
 
       return res.json({
@@ -172,6 +257,26 @@ export class AuthController {
           walletBalance: updatedUser.wallet?.balance || 0,
           referralCode: updatedUser.referralCode,
           isPhoneVerified: updatedUser.isPhoneVerified,
+          consultantProfile: updatedUser.consultantProfile ? {
+            id: updatedUser.consultantProfile.id,
+            status: updatedUser.consultantProfile.status,
+            isApproved: updatedUser.consultantProfile.isApproved,
+            specialty: updatedUser.consultantProfile.specialty,
+            experience: updatedUser.consultantProfile.experience,
+            bio: updatedUser.consultantProfile.bio,
+            price: updatedUser.consultantProfile.price,
+            rating: (updatedUser.consultantProfile as any).reviews && (updatedUser.consultantProfile as any).reviews.length > 0
+              ? parseFloat(((updatedUser.consultantProfile as any).reviews.reduce((acc: number, r: any) => acc + r.rating, 0) / (updatedUser.consultantProfile as any).reviews.length).toFixed(1))
+              : 5.0,
+            availability: (updatedUser.consultantProfile as any).availability
+              ? (updatedUser.consultantProfile as any).availability.map((a: any) => ({
+                  id: a.id,
+                  date: a.date,
+                  timeSlot: a.timeSlot,
+                  isBooked: a.isBooked,
+                }))
+              : [],
+          } : null,
         } : undefined,
       });
     } catch (error) {

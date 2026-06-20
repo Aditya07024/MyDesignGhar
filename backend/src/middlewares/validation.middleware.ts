@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { AnyZodObject, ZodError } from "zod";
+import { logger } from "../utils/logger";
 
 export const validate = (schema: AnyZodObject) => {
   return async (req: Request, res: Response, next: NextFunction) => {
@@ -12,6 +13,7 @@ export const validate = (schema: AnyZodObject) => {
       next();
     } catch (error) {
       if (error instanceof ZodError) {
+        logger.error(`Validation failed for ${req.method} ${req.originalUrl}: ${JSON.stringify(error.errors)}`);
         return res.status(400).json({
           message: "Validation failed",
           errors: error.errors.map((e) => ({
@@ -20,6 +22,7 @@ export const validate = (schema: AnyZodObject) => {
           })),
         });
       }
+      logger.error(`Internal validation error: ${error}`);
       return res.status(500).json({ message: "Internal server validation error" });
     }
   };

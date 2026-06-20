@@ -20,6 +20,7 @@ export class ConsultantController {
 
       const existing = await prisma.consultant.findUnique({ where: { userId } });
       if (existing) {
+        logger.error(`Register failed for User ${userId}: already registered as consultant`);
         return res.status(400).json({ message: "You have already registered as a consultant" });
       }
 
@@ -479,18 +480,22 @@ export class ConsultantController {
       const userId = req.user!.id;
       const role = req.user!.role;
 
-      let bookings;
+      let bookings: any[];
       if (role === Role.CONSULTANT) {
         const consultant = await prisma.consultant.findUnique({ where: { userId } });
-        bookings = await prisma.consultationBooking.findMany({
-          where: { consultantId: consultant?.id },
-          include: {
-            user: { select: { profile: { select: { fullName: true } } } },
-            availability: true,
-            notes: true,
-          },
-          orderBy: { createdAt: "desc" },
-        });
+        if (!consultant) {
+          bookings = [];
+        } else {
+          bookings = await prisma.consultationBooking.findMany({
+            where: { consultantId: consultant.id },
+            include: {
+              user: { select: { profile: { select: { fullName: true } } } },
+              availability: true,
+              notes: true,
+            },
+            orderBy: { createdAt: "desc" },
+          });
+        }
       } else {
         bookings = await prisma.consultationBooking.findMany({
           where: { userId },

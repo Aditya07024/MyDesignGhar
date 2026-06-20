@@ -11,6 +11,7 @@ export default function AdminDashboard() {
   const navigate = useNavigate();
   const { signOut } = useClerk();
 
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>("USERS");
   const [users, setUsers] = useState<any[]>([]);
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
@@ -161,11 +162,26 @@ export default function AdminDashboard() {
 
   return (
     <div className="dashboard-layout">
+      {/* Mobile Hamburger Toggle */}
+      <button className="mobile-menu-toggle" onClick={() => setSidebarOpen(true)}>
+        <div className="hamburger-icon">
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      </button>
+
+      {/* Overlay Backdrop */}
+      <div className={`sidebar-overlay ${sidebarOpen ? "active" : ""}`} onClick={() => setSidebarOpen(false)} />
+
       {/* Admin Sidebar */}
-      <aside className="sidebar glass-panel">
+      <aside className={`sidebar glass-panel ${sidebarOpen ? "open" : ""}`}>
+        {/* Close button for mobile */}
+        <button className="sidebar-close" onClick={() => setSidebarOpen(false)}>×</button>
+
         <div className="sidebar-logo">
-          <img src={logo} alt="MyDesignGhar Logo" style={{ height: "32px", objectFit: "contain", marginRight: "4px" }} />
-          <span className="logo-text">MyDesignGhar</span>
+          <img src={logo} alt="MydesignGhar Logo" style={{ height: "32px", objectFit: "contain", marginRight: "4px" }} />
+          <span className="logo-text">MydesignGhar</span>
         </div>
 
         <div className="consultant-profile-card">
@@ -179,28 +195,40 @@ export default function AdminDashboard() {
         <nav className="sidebar-nav">
           <button
             className={`nav-item ${activeTab === "USERS" ? "active" : ""}`}
-            onClick={() => setActiveTab("USERS")}
+            onClick={() => {
+              setActiveTab("USERS");
+              setSidebarOpen(false);
+            }}
           >
             <Users size={18} />
             <span className="nav-label">User Management</span>
           </button>
           <button
             className={`nav-item ${activeTab === "CONSULTANTS" ? "active" : ""}`}
-            onClick={() => setActiveTab("CONSULTANTS")}
+            onClick={() => {
+              setActiveTab("CONSULTANTS");
+              setSidebarOpen(false);
+            }}
           >
             <Award size={18} />
             <span className="nav-label">Consultant Approvals</span>
           </button>
           <button
             className={`nav-item ${activeTab === "AFFILIATES" ? "active" : ""}`}
-            onClick={() => setActiveTab("AFFILIATES")}
+            onClick={() => {
+              setActiveTab("AFFILIATES");
+              setSidebarOpen(false);
+            }}
           >
             <ShoppingBag size={18} />
             <span className="nav-label">Affiliate Products</span>
           </button>
           <button
             className={`nav-item ${activeTab === "AUDIT_LOGS" ? "active" : ""}`}
-            onClick={() => setActiveTab("AUDIT_LOGS")}
+            onClick={() => {
+              setActiveTab("AUDIT_LOGS");
+              setSidebarOpen(false);
+            }}
           >
             <ScrollText size={18} />
             <span className="nav-label">Audit Logs</span>
