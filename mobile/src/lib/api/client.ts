@@ -1,9 +1,9 @@
 import axios from "axios";
 
 // Default base URL pointing to the Node/Express backend
-export const API_BASE_URL = typeof window !== "undefined"
+export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || (typeof window !== "undefined"
   ? (window.location.hostname === "localhost" ? "http://localhost:5001/api" : "/api")
-  : "http://localhost:5001/api";
+  : "http://localhost:5001/api");
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,

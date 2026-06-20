@@ -25,7 +25,7 @@ const getHostIp = (): string => {
 
 const hostIp = getHostIp();
 
-export const API_BASE_URL = `http://${hostIp}:5001/api`;
+export const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || `http://${hostIp}:5001/api`;
 
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,

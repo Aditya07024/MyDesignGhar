@@ -1,22 +1,13 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { 
-  Search, 
-  Home, 
-  Eye, 
   Rocket, 
-  Unlock, 
-  Box, 
   Compass, 
   ChevronDown, 
-  ChevronUp, 
   ArrowRight, 
-  Star, 
   Menu, 
   X, 
   Mail, 
-  Phone, 
-  MapPin, 
   Sparkles,
   Users,
   Upload,
@@ -50,12 +41,12 @@ export default function LandingPage() {
     { name: "Office Design", img: "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=400&q=80" }
   ];
 
-  const team = [
-    { name: "Vikram Singh", role: "Founder & Lead Architect", img: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80" },
-    { name: "Rohan Mehta", role: "Heritage & Custom specialist", img: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=300&q=80" },
-    { name: "Priya Sharma", role: "Luxury Modulations Expert", img: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=300&q=80" },
-    { name: "Vikram Nair", role: "Japandi & Minimalist Designer", img: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=300&q=80" }
-  ];
+  // const team = [
+  //   { name: "Vikram Singh", role: "Founder & Lead Architect", img: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=300&q=80" },
+  //   { name: "Rohan Mehta", role: "Heritage & Custom specialist", img: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=300&q=80" },
+  //   { name: "Priya Sharma", role: "Luxury Modulations Expert", img: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=300&q=80" },
+  //   { name: "Vikram Nair", role: "Japandi & Minimalist Designer", img: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=300&q=80" }
+  // ];
 
   const tenets = [
     { title: "AI-POWERED SPEED", content: "Generate high-fidelity, photorealistic 3D room renders in seconds. Visualize your dream space across multiple styles instantly before spending a single rupee." },
