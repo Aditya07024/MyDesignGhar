@@ -187,9 +187,9 @@ export default function GenerateScreen() {
         {/* <Text style={styles.loadingTimer}>Estimated time: ~{Math.max(secondsLeft, 0)}s</Text> */}
         
         {/* Progress Bar */}
-        <View style={styles.progressBarBg}>
+        {/* <View style={styles.progressBarBg}>
           <View style={[styles.progressBarFill, { width: `${progressPercent}%` }]} />
-        </View>
+        </View> */}
       </View>
     );
   }

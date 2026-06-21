@@ -162,7 +162,7 @@ export class DesignController {
 
         // Watermark -> public bucket
         const watermarked = await AIService.applyWatermark(buffer);
-        const previewPath = `previews/${design.id}/${imageId}.jpg`;
+        const previewPath = `${design.id}/${imageId}.jpg`;
         const previewUrl = await StorageService.uploadBuffer(
           watermarked,
           "previews",

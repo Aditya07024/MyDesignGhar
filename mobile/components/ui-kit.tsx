@@ -4718,15 +4718,27 @@ const ROOM_IMAGES: Record<string, string> = {
 // Reusable Helper
 export const img = (seed: string, w = 800, h = 600) => {
   if (!seed) return "";
+  
+  let url = seed;
+  if (url.includes("localhost:5001") || url.includes("127.0.0.1:5001")) {
+    try {
+      const { API_BASE_URL } = require("../lib/api/client");
+      const apiHost = API_BASE_URL.replace("/api", "");
+      url = url.replace(/http:\/\/(localhost|127\.0\.0\.1):5001/, apiHost);
+    } catch (e) {
+      // Ignore
+    }
+  }
+
   if (
-    seed.startsWith("http://") ||
-    seed.startsWith("https://") ||
-    seed.startsWith("file://") ||
-    seed.startsWith("content://") ||
-    seed.startsWith("data:") ||
-    seed.startsWith("/")
+    url.startsWith("http://") ||
+    url.startsWith("https://") ||
+    url.startsWith("file://") ||
+    url.startsWith("content://") ||
+    url.startsWith("data:") ||
+    url.startsWith("/")
   ) {
-    return seed;
+    return url;
   }
   if (ROOM_IMAGES[seed]) {
     return `${ROOM_IMAGES[seed]}&w=${w}&h=${h}`;
@@ -4935,29 +4947,7 @@ export function SectionTitle({
 
 // --- BEFORE AFTER VISUALIZER ---
 const resolveUri = (seedOrUrl: string) => {
-  if (!seedOrUrl) return "";
-  let url = seedOrUrl;
-  if (url.includes("localhost:5001") || url.includes("127.0.0.1:5001")) {
-    try {
-      const { API_BASE_URL } = require("../lib/api/client");
-      const apiHost = API_BASE_URL.replace("/api", "");
-      url = url.replace(/http:\/\/(localhost|127\.0\.0\.1):5001/, apiHost);
-    } catch (e) {
-      // Ignore
-    }
-  }
-  
-  let finalUri = url;
-  if (
-    !(url.startsWith("http://") ||
-      url.startsWith("https://") ||
-      url.startsWith("file://") ||
-      url.startsWith("content://") ||
-      url.startsWith("data:") ||
-      url.startsWith("/"))
-  ) {
-    finalUri = img(url, 800, 600);
-  }
+  const finalUri = img(seedOrUrl, 800, 600);
   console.log(`[resolveUri] Input: "${seedOrUrl}" -> Resolved: "${finalUri}"`);
   return finalUri;
 };
