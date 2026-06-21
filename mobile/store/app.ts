@@ -169,6 +169,7 @@ export const useApp = create<AppState>((set, get) => ({
           user: parsedUser,
           userName: parsedUser.fullName,
           walletBalance: parsedUser.walletBalance ?? 0,
+          sessionToken: token,
         });
       }
     } catch {
