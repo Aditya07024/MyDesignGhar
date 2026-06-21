@@ -14,10 +14,11 @@ import { useRouter, Link } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import * as Linking from "expo-linking";
 import { useSignIn, useOAuth, useAuth } from "@clerk/clerk-expo";
-import { Phone, Lock, Sparkles } from "lucide-react-native";
+import { Mail, Lock, Sparkles } from "lucide-react-native";
 import { COLORS, Button, useStyles } from "../../components/ui-kit";
 import { useApp } from "../../store/app";
 import { useSyncMutation } from "../../hooks/useApi";
+import { setSessionToken } from "../../lib/api/client";
 import { useEffect } from "react";
 
 WebBrowser.maybeCompleteAuthSession();
@@ -25,7 +26,7 @@ WebBrowser.maybeCompleteAuthSession();
 export default function LoginScreen() {
   const router = useRouter();
   const styles = useStyles(getStyles);
-  const { isLoaded: isAuthLoaded, isSignedIn } = useAuth();
+  const { isLoaded: isAuthLoaded, isSignedIn, getToken } = useAuth();
   
   const login = useApp((s) => s.login);
   const isAuthed = useApp((s) => s.isAuthed);
@@ -48,7 +49,7 @@ export default function LoginScreen() {
   useEffect(() => {
     setSelectedRole("USER");
   }, []);
-  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
   const [pwd, setPwd] = useState("");
   const [err, setErr] = useState("");
   const [loading, setLoading] = useState(false);
@@ -123,8 +124,8 @@ export default function LoginScreen() {
 
   const submit = async () => {
     if (!isLoaded) return;
-    if (!/^\d{10}$/.test(phone)) {
-      return setErr("Enter a valid 10-digit phone number.");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return setErr("Enter a valid email address.");
     }
     if (pwd.length < 4) {
       return setErr("Password must be at least 4 characters.");
@@ -133,16 +134,26 @@ export default function LoginScreen() {
     setLoading(true);
 
     try {
-      const formattedPhone = phone.startsWith("+") ? phone : `+91${phone}`;
-
       const result = await signIn.create({
-        identifier: formattedPhone,
+        identifier: email.trim(),
         password: pwd,
       });
 
       if (result.status === "complete") {
         if (setActive) {
           await setActive({ session: result.createdSessionId });
+        }
+
+        // Retry token fetching to prevent race conditions in Clerk Expo
+        let sessionTokenString = null;
+        for (let attempt = 0; attempt < 5; attempt++) {
+          sessionTokenString = await getToken();
+          if (sessionTokenString) break;
+          await new Promise((resolve) => setTimeout(resolve, 300));
+        }
+
+        if (sessionTokenString) {
+          setSessionToken(sessionTokenString);
         }
 
         // Sync details to local PostgreSQL
@@ -214,16 +225,16 @@ export default function LoginScreen() {
           </View>
 
           <View style={styles.form}>
-            {/* Phone field */}
+            {/* Email field */}
             <View style={styles.inputContainer}>
-              <Phone size={20} color={COLORS.textMuted} style={styles.inputIcon} />
+              <Mail size={20} color={COLORS.textMuted} style={styles.inputIcon} />
               <TextInput
-                placeholder="Phone number"
+                placeholder="Email address"
                 placeholderTextColor={COLORS.textMuted}
-                value={phone}
-                onChangeText={setPhone}
-                keyboardType="numeric"
-                maxLength={10}
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
                 style={styles.input}
               />
             </View>

@@ -2,7 +2,7 @@ import { Slot, Stack } from "expo-router";
 import { ClerkProvider, useAuth } from "@clerk/clerk-expo";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, SafeAreaView, StatusBar, Platform } from "react-native";
+import { View, Text, StyleSheet, SafeAreaView, StatusBar, Platform, ActivityIndicator } from "react-native";
 import { tokenCache } from "../lib/auth-cache";
 import { setSessionToken } from "../lib/api/client";
 import { useApp } from "../store/app";
@@ -121,7 +121,7 @@ export default function RootLayout() {
         <View style={styles.fallbackContent}>
           <Text style={styles.fallbackTitle}>Clerk Configuration Required</Text>
           <Text style={styles.fallbackBody}>
-            To run the MyDesignGhar mobile app, you need to configure your Clerk Publishable Key.
+            To run the MyDezineGhar mobile app, you need to configure your Clerk Publishable Key.
           </Text>
           
           <View style={styles.instructionsCard}>
@@ -151,19 +151,31 @@ export default function RootLayout() {
 
   const theme = useApp((s) => s.theme);
   const language = useApp((s) => s.language);
+  const hydrated = useApp((s) => s.hydrated);
   const isBackendDown = useApp((s) => s.isBackendDown);
+
+  useEffect(() => {
+    if (hydrated) {
+      queryClient.invalidateQueries();
+    }
+  }, [language, hydrated]);
 
   return (
     <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY} tokenCache={tokenCache}>
       <QueryClientProvider client={queryClient}>
         <TokenSync />
         <StatusBar barStyle={theme === "dark" ? "light-content" : "dark-content"} />
-        <Stack
-          key={`${theme}-${language}`}
-          screenOptions={{
-            headerStyle: {
-              backgroundColor: COLORS.card,
-            },
+        {!hydrated ? (
+          <View style={{ flex: 1, backgroundColor: COLORS.background, justifyContent: "center", alignItems: "center" }}>
+            <ActivityIndicator size="large" color={COLORS.primary} />
+          </View>
+        ) : (
+          <Stack
+            key={`${theme}-${language}`}
+            screenOptions={{
+              headerStyle: {
+                backgroundColor: COLORS.card,
+              },
             headerTintColor: COLORS.text,
             headerTitleStyle: {
               fontWeight: "bold",
@@ -177,6 +189,7 @@ export default function RootLayout() {
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="(auth)" options={{ headerShown: false }} />
           <Stack.Screen name="onboarding" options={{ headerShown: false }} />
+          <Stack.Screen name="landing" options={{ headerShown: false }} />
           <Stack.Screen name="generate/index" options={{ title: "Generate Design" }} />
           <Stack.Screen name="generate/result" options={{ title: "AI Redesign Result" }} />
           <Stack.Screen name="call" options={{ title: "Consultation Call" }} />
@@ -186,6 +199,7 @@ export default function RootLayout() {
           <Stack.Screen name="sessions" options={{ title: "Session Details" }} />
           <Stack.Screen name="settings" options={{ title: "Settings" }} />
         </Stack>
+        )}
         {isBackendDown && (
           <View style={StyleSheet.absoluteFill}>
             <MaintenanceScreen />

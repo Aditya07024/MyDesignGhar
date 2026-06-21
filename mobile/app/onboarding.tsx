@@ -11,37 +11,42 @@ import {
   Platform,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { Camera, MapPin, Users, Sparkles, ChevronRight } from "lucide-react-native";
-import { COLORS, img, Button, useStyles } from "../components/ui-kit";
+import { Users, Sparkles, Compass, ChevronRight } from "lucide-react-native";
+import { COLORS, Button, useStyles, useTranslation } from "../components/ui-kit";
 import { useAuth } from "@clerk/clerk-expo";
 import { useApp } from "../store/app";
+
+import livingRoomAccent from "../assets/black-living-room-accent-colors.png";
+import heroBg from "../assets/hero-bg.png";
+import blueprints from "../assets/blueprints.png";
 
 const { width, height } = Dimensions.get("window");
 
 const slides = [
   {
-    icon: Camera,
-    seed: "onb-1",
-    title: "Transform Any Room in Seconds",
-    desc: "Upload a room photo and get stunning AI redesigns instantly.",
-  },
-  {
-    icon: MapPin,
-    seed: "onb-2",
-    title: "26 Indian Regional Styles",
-    desc: "Discover interiors inspired by Rajasthan, Kerala, Kashmir, Goa, Punjab, Bengal and more.",
+    icon: Sparkles,
+    image: livingRoomAccent,
+    title: "AI-Powered Speed",
+    desc: "Generate high-fidelity, photorealistic 3D room renders in seconds. Visualize your dream space instantly across 10+ styles.",
   },
   {
     icon: Users,
-    seed: "onb-3",
-    title: "Talk to Real Designers",
-    desc: "Book interior experts directly from the app.",
+    image: heroBg,
+    title: "Vetted Design Experts",
+    desc: "Collaborate with the top 5% of Indian interior design talent. Our consultants are verified experts in space optimization and materials.",
+  },
+  {
+    icon: Compass,
+    image: blueprints,
+    title: "Transparent Blueprints",
+    desc: "Get direct lists of furniture sources, paint codes, and modular configurations with zero hidden commissions.",
   },
 ];
 
 export default function OnboardingScreen() {
   const router = useRouter();
   const styles = useStyles(getStyles);
+  const t = useTranslation();
   const { isLoaded, isSignedIn } = useAuth();
   const [slideIndex, setSlideIndex] = useState(0);
   const [showNameStep, setShowNameStep] = useState(false);
@@ -81,12 +86,12 @@ export default function OnboardingScreen() {
             <View style={styles.iconWrapper}>
               <Sparkles size={26} color="#12141a" />
             </View>
-            <Text style={styles.nameTitle}>What is your name?</Text>
-            <Text style={styles.desc}>Let's personalize your interior design experience.</Text>
+            <Text style={styles.nameTitle}>{t("What is your name?")}</Text>
+            <Text style={styles.desc}>{t("Let's personalize your interior design experience.")}</Text>
             
             <TextInput
               style={styles.nameTextInput}
-              placeholder="Enter your full name"
+              placeholder={t("Enter your full name")}
               placeholderTextColor={COLORS.textMuted}
               value={name}
               onChangeText={setName}
@@ -94,7 +99,7 @@ export default function OnboardingScreen() {
             />
 
             <Button
-              title="Continue"
+              title={t("Continue")}
               full
               size="lg"
               disabled={!name.trim()}
@@ -121,7 +126,7 @@ export default function OnboardingScreen() {
       {/* Skip Button */}
       <View style={styles.topBar}>
         <TouchableOpacity onPress={handleSkip} style={styles.skipBtn} activeOpacity={0.8}>
-          <Text style={styles.skipText}>Skip</Text>
+          <Text style={styles.skipText}>{t("Skip")}</Text>
         </TouchableOpacity>
       </View>
 
@@ -129,7 +134,7 @@ export default function OnboardingScreen() {
       <View style={styles.imageFrameContainer}>
         <View style={styles.imageBorderFrame}>
           <Image
-            source={{ uri: img(current.seed, 800, 950) }}
+            source={current.image}
             style={styles.image}
             resizeMode="cover"
           />
@@ -143,8 +148,8 @@ export default function OnboardingScreen() {
             <Icon size={24} color="#12141a" />
           </View>
 
-          <Text style={styles.title}>{current.title}</Text>
-          <Text style={styles.desc}>{current.desc}</Text>
+          <Text style={styles.title}>{t(current.title)}</Text>
+          <Text style={styles.desc}>{t(current.desc)}</Text>
 
           {/* Indicators Row */}
           <View style={styles.indicatorContainer}>
@@ -164,7 +169,7 @@ export default function OnboardingScreen() {
 
           {/* Navigation Button */}
           <Button
-            title={isLast ? "Get Started" : "Next"}
+            title={isLast ? t("Get Started") : t("Next")}
             full
             size="lg"
             icon={!isLast && <ChevronRight size={18} color="#12141a" />}
@@ -190,7 +195,7 @@ const getStyles = (theme: "light" | "dark") => {
       width: 320,
       height: 320,
       borderRadius: 160,
-      backgroundColor: isDark ? "rgba(140, 192, 235, 0.15)" : "rgba(140, 192, 235, 0.4)",
+      backgroundColor: isDark ? "rgba(205, 162, 80, 0.15)" : "rgba(205, 162, 80, 0.4)",
       opacity: 0.8,
     },
     glowBottom: {
@@ -200,7 +205,7 @@ const getStyles = (theme: "light" | "dark") => {
       width: 320,
       height: 320,
       borderRadius: 160,
-      backgroundColor: isDark ? "rgba(255, 235, 204, 0.1)" : "rgba(255, 218, 163, 0.5)",
+      backgroundColor: isDark ? "rgba(184, 143, 62, 0.08)" : "rgba(255, 218, 163, 0.35)",
       opacity: 0.8,
     },
     topBar: {

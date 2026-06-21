@@ -10,7 +10,7 @@ import {
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { CheckCircle, CreditCard } from "lucide-react-native";
-import { COLORS, Button, Chip, GlassCard, useStyles } from "../components/ui-kit";
+import { COLORS, Button, Chip, GlassCard, useStyles, useTranslation } from "../components/ui-kit";
 import { useApp } from "../store/app";
 import { consultants, timeSlots } from "../src/lib/mock";
 
@@ -26,6 +26,7 @@ export default function BookingScreen() {
   const router = useRouter();
   const styles = useStyles(getStyles);
   const params = useLocalSearchParams();
+  const t = useTranslation();
   
   const consultantId = typeof params.c === "string" ? params.c : "c1";
   const consultant = consultants.find((x) => x.id === consultantId) ?? consultants[0];
@@ -40,19 +41,19 @@ export default function BookingScreen() {
       <SafeAreaView style={styles.doneContainer}>
         <View style={styles.doneContent}>
           <CheckCircle size={80} color={COLORS.success} style={styles.doneIcon} />
-          <Text style={styles.doneTitle}>Booking confirmed!</Text>
+          <Text style={styles.doneTitle}>{t("Booking confirmed!")}</Text>
           <Text style={styles.doneSubtitle}>
-            Your session with <Text style={styles.boldText}>{consultant.name}</Text> is set for Jun {day}, {slot}.
+            {t("Your session with {name} is set for Jun {day}, {slot}.").replace("{name}", consultant.name).replace("{day}", day.toString()).replace("{slot}", slot)}
           </Text>
           
           <Button
-            title="View my sessions"
+            title={t("View my sessions")}
             full
             onPress={() => router.replace("/sessions")}
             style={styles.doneBtn}
           />
           <Button
-            title="Back to home"
+            title={t("Back to home")}
             variant="ghost"
             full
             onPress={() => router.replace("/(tabs)/home")}
@@ -80,14 +81,14 @@ export default function BookingScreen() {
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.headerTitle}>
-            {step === "select" ? "Book Session" : "Payment"}
+            {step === "select" ? t("Book Session") : t("Payment")}
           </Text>
           <Text style={styles.headerSubtitle}>{consultant.name}</Text>
         </View>
 
         {step === "select" ? (
           <>
-            <Text style={styles.sectionHeading}>Select a date</Text>
+            <Text style={styles.sectionHeading}>{t("Select a date")}</Text>
             <View style={styles.daysRow}>
               {days.map((dd) => (
                 <TouchableOpacity
@@ -100,7 +101,7 @@ export default function BookingScreen() {
                   ]}
                 >
                   <Text style={[styles.dayName, day === dd.n && styles.dayTextActive]}>
-                    {dd.d}
+                    {t(dd.d)}
                   </Text>
                   <Text style={[styles.dayNumber, day === dd.n && styles.dayTextActive]}>
                     {dd.n}
@@ -109,25 +110,25 @@ export default function BookingScreen() {
               ))}
             </View>
 
-            <Text style={styles.sectionHeading}>Select a time</Text>
+            <Text style={styles.sectionHeading}>{t("Select a time")}</Text>
             <View style={styles.slotsWrapper}>
-              {timeSlots.map((t) => (
-                <Chip key={t} active={slot === t} onPress={() => setSlot(t)}>
-                  {t}
+              {timeSlots.map((tVal) => (
+                <Chip key={tVal} active={slot === tVal} onPress={() => setSlot(tVal)}>
+                  {tVal}
                 </Chip>
               ))}
             </View>
 
             {/* Booking Summary */}
             <GlassCard style={styles.summaryCard}>
-              <Text style={styles.summaryTitle}>Booking summary</Text>
-              <SummaryRow label="Designer" value={consultant.name} />
-              <SummaryRow label="Date & time" value={`Jun ${day}, ${slot}`} />
-              <SummaryRow label="Session fee" value={`₹${consultant.price}`} />
+              <Text style={styles.summaryTitle}>{t("Booking summary")}</Text>
+              <SummaryRow label={t("Designer")} value={consultant.name} />
+              <SummaryRow label={t("Date & time")} value={`${t("Jun")} ${day}, ${slot}`} />
+              <SummaryRow label={t("Session fee")} value={`₹${consultant.price}`} />
             </GlassCard>
 
             <Button
-              title="Proceed to Payment"
+              title={t("Proceed to Payment")}
               full
               size="lg"
               onPress={() => setStep("pay")}
@@ -137,14 +138,14 @@ export default function BookingScreen() {
         ) : (
           <>
             <GlassCard style={styles.summaryCard}>
-              <Text style={styles.summaryTitle}>Order summary</Text>
-              <SummaryRow label="Consultation" value={`₹${consultant.price}`} />
-              <SummaryRow label="Platform fee" value="₹49" />
+              <Text style={styles.summaryTitle}>{t("Order summary")}</Text>
+              <SummaryRow label={t("Consultation")} value={`₹${consultant.price}`} />
+              <SummaryRow label={t("Platform fee")} value="₹49" />
               <View style={styles.divider} />
-              <SummaryRow label="Total" value={`₹${consultant.price + 49}`} bold />
+              <SummaryRow label={t("Total")} value={`₹${consultant.price + 49}`} bold />
             </GlassCard>
 
-            <Text style={styles.sectionHeading}>Payment method</Text>
+            <Text style={styles.sectionHeading}>{t("Payment method")}</Text>
             <View style={styles.paymentMethods}>
               {["UPI", "Credit / Debit Card", "Wallet Balance"].map((m) => {
                 const isActive = paymentMethod === m;
@@ -162,14 +163,14 @@ export default function BookingScreen() {
                       {isActive && <View style={styles.radioInner} />}
                     </View>
                     <CreditCard size={18} color={COLORS.textMuted} style={styles.payIcon} />
-                    <Text style={styles.payMethodText}>{m}</Text>
+                    <Text style={styles.payMethodText}>{t(m)}</Text>
                   </TouchableOpacity>
                 );
               })}
             </View>
 
             <Button
-              title={`Pay ₹${consultant.price + 49}`}
+              title={`${t("Pay")} ₹${consultant.price + 49}`}
               full
               size="lg"
               onPress={() => setStep("done")}

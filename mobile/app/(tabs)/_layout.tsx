@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { Tabs, useRouter } from "expo-router";
 import { useAuth } from "@clerk/clerk-expo";
 import { Home, LayoutGrid, Users, Wallet } from "lucide-react-native";
-import { COLORS } from "../../components/ui-kit";
+import { COLORS, useTranslation } from "../../components/ui-kit";
 import { ActivityIndicator, View, Platform } from "react-native";
 import { useApp } from "../../store/app";
 
@@ -12,6 +12,7 @@ export default function TabsLayout() {
   const user = useApp((s) => s.user);
   const router = useRouter();
   const theme = useApp((s) => s.theme);
+  const t = useTranslation();
 
   useEffect(() => {
     if (isLoaded && (!isSignedIn || !isAuthed)) {
@@ -66,7 +67,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="home"
         options={{
-          title: "Home",
+          title: t("Home"),
           headerShown: false,
           tabBarIcon: ({ color, size }) => <Home size={size} color={color} />,
         }}
@@ -74,8 +75,8 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="designs"
         options={{
-          title: "Designs",
-          headerTitle: "My Designs",
+          title: t("Designs"),
+          headerTitle: t("My Designs"),
           tabBarIcon: ({ color, size }) => <LayoutGrid size={size} color={color} />,
           href: isConsultant ? null : undefined,
         }}
@@ -83,8 +84,8 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="consultants"
         options={{
-          title: "Consultants",
-          headerTitle: "Experts Marketplace",
+          title: t("Consultants"),
+          headerTitle: t("Experts Marketplace"),
           tabBarIcon: ({ color, size }) => <Users size={size} color={color} />,
           href: isConsultant ? null : undefined,
         }}
@@ -92,8 +93,8 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="wallet"
         options={{
-          title: isConsultant ? "Earnings" : "Wallet",
-          headerTitle: isConsultant ? "My Earnings" : "My Wallet",
+          title: isConsultant ? t("Earnings") : t("Wallet"),
+          headerTitle: isConsultant ? t("My Earnings") : t("My Wallet"),
           tabBarIcon: ({ color, size }) => <Wallet size={size} color={color} />,
         }}
       />

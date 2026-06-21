@@ -76,7 +76,7 @@ export default function DesignDetailScreen() {
   const handleShare = async () => {
     try {
       await Share.share({
-        message: `Look at this incredible design details for "${d.title}" (${d.style} style ${d.room}) I created on MyDesignGhar!`,
+        message: `Look at this incredible design details for "${d.title}" (${d.style} style ${d.room}) I created on MyDezineGhar!`,
       });
     } catch (e) {
       console.error(e);
@@ -200,7 +200,7 @@ export default function DesignDetailScreen() {
                 transform: [{ rotate: "-30deg" }],
                 letterSpacing: 4,
               }}>
-                MYDESIGNGHAR PREVIEW
+                MYDEZINEGHAR PREVIEW
               </Text>
             </View>
           )}

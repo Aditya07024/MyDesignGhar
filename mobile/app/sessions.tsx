@@ -10,13 +10,14 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Calendar, Clock, Video } from "lucide-react-native";
-import { COLORS, Avatar, Button, EmptyState, useStyles } from "../components/ui-kit";
+import { COLORS, Avatar, Button, EmptyState, useStyles, useTranslation } from "../components/ui-kit";
 import { useApp } from "../store/app";
 import { useBookingsQuery } from "../hooks/useApi";
 
 export default function SessionsScreen() {
   const router = useRouter();
   const styles = useStyles(getStyles);
+  const t = useTranslation();
   const [activeTab, setActiveTab] = useState<"upcoming" | "past">("upcoming");
   const { data: realBookings = [], isLoading } = useBookingsQuery();
 
@@ -37,28 +38,28 @@ export default function SessionsScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>My Sessions</Text>
+          <Text style={styles.headerTitle}>{t("My Sessions")}</Text>
         </View>
 
         {/* Tabs Row */}
         <View style={styles.tabContainer}>
-          {(["upcoming", "past"] as const).map((t) => (
+          {(["upcoming", "past"] as const).map((tab) => (
             <TouchableOpacity
-              key={t}
+              key={tab}
               activeOpacity={0.8}
-              onPress={() => setActiveTab(t)}
+              onPress={() => setActiveTab(tab)}
               style={[
                 styles.tabBtn,
-                activeTab === t && styles.tabBtnActive,
+                activeTab === tab && styles.tabBtnActive,
               ]}
             >
               <Text
                 style={[
                   styles.tabBtnText,
-                  activeTab === t && styles.tabBtnTextActive,
+                  activeTab === tab && styles.tabBtnTextActive,
                 ]}
               >
-                {t.charAt(0).toUpperCase() + t.slice(1)}
+                {tab === "upcoming" ? t("Upcoming") : t("Past")}
               </Text>
             </TouchableOpacity>
           ))}
@@ -72,8 +73,8 @@ export default function SessionsScreen() {
         ) : filteredList.length === 0 ? (
           <EmptyState
             icon={<Calendar size={32} color={COLORS.primary} />}
-            title={`No ${activeTab} sessions`}
-            body="Book an interior designer to get personalized recommendations."
+            title={activeTab === "upcoming" ? t("No upcoming sessions") : t("No past sessions")}
+            body={t("Book an interior designer to get personalized recommendations.")}
           />
         ) : (
           <View style={styles.list}>
@@ -103,7 +104,7 @@ export default function SessionsScreen() {
                 </View>
                 {activeTab === "upcoming" && (
                   <Button
-                    title="Join Session"
+                    title={t("Join Session")}
                     size="sm"
                     icon={<Video size={14} color="#12141a" />}
                     onPress={() => handleJoinSession(s.id)}

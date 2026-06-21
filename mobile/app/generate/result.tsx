@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Heart, Share2, Bookmark, Download, RefreshCw, Users, Sparkles, CheckCircle2, Circle } from "lucide-react-native";
-import { COLORS, Button, GlassCard, BeforeAfter, useStyles } from "../../components/ui-kit";
+import { COLORS, Button, GlassCard, BeforeAfter, useStyles, useTranslation } from "../../components/ui-kit";
 import { useApp } from "../../store/app";
 import { useDesignDetailsQuery, useWalletBalanceQuery, usePurchaseImagesMutation } from "../../hooks/useApi";
 import { DesignService } from "../../lib/api/services";
@@ -20,6 +20,7 @@ import { DesignService } from "../../lib/api/services";
 export default function ResultScreen() {
   const router = useRouter();
   const styles = useStyles(getStyles);
+  const t = useTranslation();
   const params = useLocalSearchParams();
   const { favorites, toggleFavorite } = useApp();
 
@@ -74,7 +75,7 @@ export default function ResultScreen() {
   const handleShare = async (title: string) => {
     try {
       await Share.share({
-        message: `Check out this amazing AI room redesign: "${title}" on MyDesignGhar!`,
+        message: `Check out this amazing AI room redesign: "${title}" on MyDezineGhar!`,
       });
     } catch (e) {
       console.error(e);
@@ -85,44 +86,44 @@ export default function ResultScreen() {
     try {
       const res = await DesignService.getDownloadUrl(imageId);
       Alert.alert(
-        "Download Link Ready",
-        `High-res image is ready! Copy the link to open in your browser:\n\n${res.downloadUrl}`,
+        t("Download Link Ready"),
+        t("High-res image is ready! Copy the link to open in your browser:") + `\n\n${res.downloadUrl}`,
         [
-          { text: "Close" }
+          { text: t("Close") }
         ]
       );
     } catch (err: any) {
-      Alert.alert("Error", err.response?.data?.message || "Failed to retrieve download link.");
+      Alert.alert(t("Error") || "Error", err.response?.data?.message || t("Failed to retrieve download link."));
     }
   };
 
   const handlePurchaseSingle = (imageId: string) => {
     if (walletBalance < 299) {
       Alert.alert(
-        "Insufficient Balance",
-        "You do not have enough wallet balance. Would you like to recharge?",
+        t("Insufficient Balance"),
+        t("You do not have enough wallet balance. Would you like to recharge?"),
         [
-          { text: "Cancel", style: "cancel" },
-          { text: "Recharge", onPress: () => router.push("/(tabs)/wallet") }
+          { text: t("Cancel"), style: "cancel" },
+          { text: t("Recharge"), onPress: () => router.push("/(tabs)/wallet") }
         ]
       );
       return;
     }
 
     Alert.alert(
-      "Confirm Purchase",
-      "Purchase this design option for ₹299?",
+      t("Confirm Purchase"),
+      t("Purchase this design option for ₹299?"),
       [
-        { text: "Cancel", style: "cancel" },
+        { text: t("Cancel"), style: "cancel" },
         {
-          text: "Buy Now",
+          text: t("Buy Now"),
           onPress: async () => {
             try {
               await purchaseMutation.mutateAsync([imageId]);
               refetch();
-              Alert.alert("Success", "Design purchased successfully! High-resolution download is unlocked.");
+              Alert.alert(t("Success"), t("Design purchased successfully! High-resolution download is unlocked."));
             } catch (err: any) {
-              Alert.alert("Purchase Failed", err.response?.data?.message || "Something went wrong.");
+              Alert.alert(t("Purchase Failed"), err.response?.data?.message || t("Something went wrong."));
             }
           }
         }
@@ -134,32 +135,32 @@ export default function ResultScreen() {
     const totalCost = selectedImages.size * 299;
     if (walletBalance < totalCost) {
       Alert.alert(
-        "Insufficient Balance",
-        `You need ₹${totalCost} but only have ₹${walletBalance}. Would you like to recharge?`,
+        t("Insufficient Balance"),
+        t("You need ₹${totalCost} but only have ₹${walletBalance}. Would you like to recharge?").replace("${totalCost}", String(totalCost)).replace("${walletBalance}", String(walletBalance)),
         [
-          { text: "Cancel", style: "cancel" },
-          { text: "Recharge", onPress: () => router.push("/(tabs)/wallet") }
+          { text: t("Cancel"), style: "cancel" },
+          { text: t("Recharge"), onPress: () => router.push("/(tabs)/wallet") }
         ]
       );
       return;
     }
 
     Alert.alert(
-      "Confirm Purchase",
-      `Purchase ${selectedImages.size} selected design(s) for ₹${totalCost}?`,
+      t("Confirm Purchase"),
+      t("Purchase ${selectedImages.size} selected design(s) for ₹${totalCost}?").replace("${selectedImages.size}", String(selectedImages.size)).replace("${totalCost}", String(totalCost)),
       [
-        { text: "Cancel", style: "cancel" },
+        { text: t("Cancel"), style: "cancel" },
         {
-          text: "Confirm & Buy",
+          text: t("Confirm & Buy"),
           onPress: async () => {
             try {
               const idsArray = Array.from(selectedImages);
               await purchaseMutation.mutateAsync(idsArray);
               setSelectedImages(new Set());
               refetch();
-              Alert.alert("Success", "All selected designs purchased successfully!");
+              Alert.alert(t("Success"), t("All selected designs purchased successfully!"));
             } catch (err: any) {
-              Alert.alert("Purchase Failed", err.response?.data?.message || "Something went wrong.");
+              Alert.alert(t("Purchase Failed"), err.response?.data?.message || t("Something went wrong."));
             }
           }
         }
@@ -171,7 +172,7 @@ export default function ResultScreen() {
     return (
       <SafeAreaView style={[styles.container, { justifyContent: "center", alignItems: "center" }]}>
         <ActivityIndicator size="large" color={COLORS.primary} />
-        <Text style={{ color: COLORS.textMuted, marginTop: 12 }}>Loading your designs...</Text>
+        <Text style={{ color: COLORS.textMuted, marginTop: 12 }}>{t("Loading your designs...")}</Text>
       </SafeAreaView>
     );
   }
@@ -181,21 +182,21 @@ export default function ResultScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Your AI Designs</Text>
-          <Text style={styles.headerSubtitle}>3 fresh concepts, just for you</Text>
+          <Text style={styles.headerTitle}>{t("Your AI Designs")}</Text>
+          <Text style={styles.headerSubtitle}>{t("3 fresh concepts, just for you")}</Text>
         </View>
  
         {/* Status Banner */}
         {hasRealData ? (
           <View style={styles.successBanner}>
             <Sparkles size={20} color={COLORS.success} />
-            <Text style={styles.successText}>Designs generated successfully!</Text>
+            <Text style={styles.successText}>{t("Designs generated successfully!")}</Text>
           </View>
         ) : (
           <View style={[styles.successBanner, { backgroundColor: "rgba(140, 192, 235, 0.1)", borderColor: "rgba(140, 192, 235, 0.2)" }]}>
             <Sparkles size={20} color={COLORS.primary} />
             <Text style={[styles.successText, { color: COLORS.primaryDark }]}>
-              Backend offline — using local fallbacks
+              {t("Backend offline — using local fallbacks")}
             </Text>
           </View>
         )}
@@ -212,7 +213,7 @@ export default function ResultScreen() {
                       {d.title}
                     </Text>
                     <Text style={styles.cardSubtitle}>
-                      {d.style} · {d.room}
+                      {t(d.style)} · {t(d.room)}
                     </Text>
                   </View>
 
@@ -229,7 +230,7 @@ export default function ResultScreen() {
                     </TouchableOpacity>
                   ) : (
                     <View style={styles.purchasedBadge}>
-                      <Text style={styles.purchasedText}>Unlocked</Text>
+                      <Text style={styles.purchasedText}>{t("Unlocked")}</Text>
                     </View>
                   )}
                 </View>
@@ -252,7 +253,7 @@ export default function ResultScreen() {
                         transform: [{ rotate: "-30deg" }],
                         letterSpacing: 4,
                       }}>
-                        MYDESIGNGHAR PREVIEW
+                        MYDEZINEGHAR PREVIEW
                       </Text>
                     </View>
                   )}
@@ -278,7 +279,7 @@ export default function ResultScreen() {
                 </View>
 
                 <Button
-                  title={d.purchased ? "Download High-Res" : "Download HD · ₹299"}
+                  title={d.purchased ? t("Download High-Res") : t("Download HD · ₹299")}
                   full
                   variant={d.purchased ? "success" : "primary"}
                   icon={<Download size={16} color={d.purchased ? "#ffffff" : "#12141a"} />}
@@ -293,14 +294,14 @@ export default function ResultScreen() {
         {/* Bottom Actions */}
         <View style={styles.actionsGrid}>
           <Button
-            title="Regenerate"
+            title={t("Regenerate")}
             variant="outline"
             icon={<RefreshCw size={16} color={COLORS.text} />}
             onPress={() => router.push("/generate")}
             style={styles.actionBtn}
           />
           <Button
-            title="Book Expert"
+            title={t("Book Expert")}
             variant="secondary"
             icon={<Users size={16} color={COLORS.text} />}
             onPress={() => router.push("/(tabs)/consultants")}
@@ -313,11 +314,11 @@ export default function ResultScreen() {
       {selectedImages.size > 0 && (
         <View style={styles.checkoutBar}>
           <View style={styles.checkoutInfo}>
-            <Text style={styles.checkoutTitle}>{selectedImages.size} selected</Text>
-            <Text style={styles.checkoutPrice}>Total: ₹{selectedImages.size * 299}</Text>
+            <Text style={styles.checkoutTitle}>{selectedImages.size} {t("selected")}</Text>
+            <Text style={styles.checkoutPrice}>{t("Total:")} ₹{selectedImages.size * 299}</Text>
           </View>
           <Button
-            title="Buy Combined"
+            title={t("Buy Combined")}
             onPress={handleCheckoutSelected}
             style={styles.checkoutBtn}
             loading={purchaseMutation.isPending}

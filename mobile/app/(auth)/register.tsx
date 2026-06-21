@@ -145,11 +145,11 @@ export default function RegisterScreen() {
     if (form.name.trim().length < 2) {
       return setErr("Please enter your name.");
     }
-    if (!/^\d{10}$/.test(form.phone)) {
-      return setErr("Enter a valid 10-digit phone number.");
-    }
-    if (form.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
       return setErr("Enter a valid email address.");
+    }
+    if (form.phone && !/^\d{10}$/.test(form.phone)) {
+      return setErr("Enter a valid 10-digit phone number.");
     }
     if (form.pwd.length < 4) {
       return setErr("Password must be at least 4 characters.");
@@ -176,12 +176,12 @@ export default function RegisterScreen() {
     setLoading(true);
 
     try {
-      const formattedPhone = form.phone.startsWith("+") ? form.phone : `+91${form.phone}`;
+      const formattedPhone = form.phone ? (form.phone.startsWith("+") ? form.phone : `+91${form.phone}`) : undefined;
 
       const result = await signUp.create({
-        phoneNumber: formattedPhone,
-        emailAddress: form.email || undefined,
+        emailAddress: form.email.trim(),
         password: form.pwd,
+        phoneNumber: formattedPhone || undefined,
         firstName: form.name.trim().split(" ")[0],
         lastName: form.name.trim().split(" ").slice(1).join(" ") || undefined,
       });
@@ -191,8 +191,14 @@ export default function RegisterScreen() {
           await setActive({ session: result.createdSessionId });
         }
 
-        // Manually fetch token and update axios header to prevent race condition before syncing
-        const sessionTokenString = await getToken();
+        // Retry token fetching to prevent race conditions in Clerk Expo
+        let sessionTokenString = null;
+        for (let attempt = 0; attempt < 5; attempt++) {
+          sessionTokenString = await getToken();
+          if (sessionTokenString) break;
+          await new Promise((resolve) => setTimeout(resolve, 300));
+        }
+
         if (sessionTokenString) {
           setSessionToken(sessionTokenString);
         }
@@ -297,30 +303,30 @@ export default function RegisterScreen() {
               />
             </View>
 
-            {/* Phone field */}
-            <View style={styles.inputContainer}>
-              <Phone size={20} color={COLORS.textMuted} style={styles.inputIcon} />
-              <TextInput
-                placeholder="Phone number"
-                placeholderTextColor={COLORS.textMuted}
-                value={form.phone}
-                onChangeText={(v) => updateField("phone", v)}
-                keyboardType="numeric"
-                maxLength={10}
-                style={styles.input}
-              />
-            </View>
-
             {/* Email field */}
             <View style={styles.inputContainer}>
               <Mail size={20} color={COLORS.textMuted} style={styles.inputIcon} />
               <TextInput
-                placeholder="Email address (optional)"
+                placeholder="Email address"
                 placeholderTextColor={COLORS.textMuted}
                 value={form.email}
                 onChangeText={(v) => updateField("email", v)}
                 keyboardType="email-address"
                 autoCapitalize="none"
+                style={styles.input}
+              />
+            </View>
+
+            {/* Phone field */}
+            <View style={styles.inputContainer}>
+              <Phone size={20} color={COLORS.textMuted} style={styles.inputIcon} />
+              <TextInput
+                placeholder="Phone number (optional)"
+                placeholderTextColor={COLORS.textMuted}
+                value={form.phone}
+                onChangeText={(v) => updateField("phone", v)}
+                keyboardType="numeric"
+                maxLength={10}
                 style={styles.input}
               />
             </View>

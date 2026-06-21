@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Plus, ArrowUpRight, ArrowDownLeft, Gift } from "lucide-react-native";
-import { COLORS, Button, GlassCard, SectionTitle, useStyles } from "../../components/ui-kit";
+import { COLORS, Button, GlassCard, SectionTitle, useStyles, useTranslation } from "../../components/ui-kit";
 import { useApp } from "../../store/app";
 import { walletPackages } from "../../src/lib/mock";
 import { useWalletBalanceQuery, useWalletHistoryQuery, useWalletTopUpMutation, useWalletVerifyTopUpMutation } from "../../hooks/useApi";
@@ -21,6 +21,7 @@ import { Platform } from "react-native";
 export default function WalletScreen() {
   const router = useRouter();
   const styles = useStyles(getStyles);
+  const t = useTranslation();
   const { data: walletBalance = 0, isLoading: loadingBalance, refetch: refetchBalance } = useWalletBalanceQuery();
   const { data: realTransactions = [], isLoading: loadingHistory, refetch: refetchHistory } = useWalletHistoryQuery();
   const topUpMutation = useWalletTopUpMutation();
@@ -57,7 +58,7 @@ export default function WalletScreen() {
           key: process.env.EXPO_PUBLIC_RAZORPAY_KEY_ID || "rzp_live_SrZjx0jgQ3fnmi", // User key
           amount: orderData.amount,
           currency: orderData.currency,
-          name: "MyDesignGhar",
+          name: "MyDezineGhar",
           description: "Wallet Top-Up",
           order_id: orderData.orderId,
           handler: async function (response: any) {
@@ -104,13 +105,13 @@ export default function WalletScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <Text style={styles.title}>{isConsultant ? "Earnings" : "Wallet"}</Text>
+        <Text style={styles.title}>{isConsultant ? t("Earnings") : t("Wallet")}</Text>
 
         {/* Balance Card */}
         <View style={styles.balanceCard}>
           <View style={styles.heroGlow} />
           <Text style={styles.balanceLabel}>
-            {isConsultant ? "Total earnings" : "Available balance"}
+            {isConsultant ? t("Total earnings") : t("Available balance")}
           </Text>
           {loadingBalance ? (
             <ActivityIndicator size="small" color={COLORS.text} style={{ marginVertical: 12, alignSelf: "flex-start" }} />
@@ -121,7 +122,7 @@ export default function WalletScreen() {
             <View style={{ flexDirection: "row", alignItems: "center", marginTop: 16, gap: 10 }}>
               <TextInput
                 keyboardType="numeric"
-                placeholder="Enter amount (e.g. 500)"
+                placeholder={t("Enter amount (e.g. 500)")}
                 placeholderTextColor={COLORS.textMuted}
                 value={rechargeAmount}
                 onChangeText={setRechargeAmount}
@@ -138,13 +139,13 @@ export default function WalletScreen() {
                 }}
               />
               <Button
-                title="Add Money"
+                title={t("Add Money")}
                 size="sm"
                 icon={<Plus size={14} color="#12141a" />}
                 onPress={() => {
                   const amt = parseFloat(rechargeAmount);
                   if (isNaN(amt) || amt <= 0) {
-                    Alert.alert("Invalid Amount", "Please enter a valid positive number.");
+                    Alert.alert(t("Error") || "Error", t("Please enter a valid positive number.") || "Please enter a valid positive number.");
                     return;
                   }
                   handleAddMoney(amt);
@@ -158,7 +159,7 @@ export default function WalletScreen() {
         {!isConsultant && (
           <>
             {/* Recharge Packages */}
-            <SectionTitle>Recharge packages</SectionTitle>
+            <SectionTitle>{t("Recharge packages")}</SectionTitle>
             <View style={styles.packagesGrid}>
               {walletPackages.map((p) => (
                 <TouchableOpacity
@@ -169,9 +170,9 @@ export default function WalletScreen() {
                 >
                   <Text style={styles.packageAmt}>₹{p.amount}</Text>
                   {p.bonus > 0 ? (
-                    <Text style={styles.packageBonus}>+₹{p.bonus} bonus</Text>
+                    <Text style={styles.packageBonus}>+₹{p.bonus} {t("bonus")}</Text>
                   ) : (
-                    <Text style={styles.packageStarter}>Starter</Text>
+                    <Text style={styles.packageStarter}>{t("Starter")}</Text>
                   )}
                 </TouchableOpacity>
               ))}
@@ -183,23 +184,23 @@ export default function WalletScreen() {
                 <Gift size={20} color={COLORS.accent} />
               </View>
               <View style={styles.referralInfo}>
-                <Text style={styles.referralTitle}>Referral earnings</Text>
-                <Text style={styles.referralSubtitle}>Earn credits by inviting friends</Text>
+                <Text style={styles.referralTitle}>{t("Referral earnings")}</Text>
+                <Text style={styles.referralSubtitle}>{t("Earn credits by inviting friends")}</Text>
               </View>
               <TouchableOpacity onPress={() => router.push("/referral")}>
-                <Text style={styles.referralLink}>Invite →</Text>
+                <Text style={styles.referralLink}>{t("Invite")} →</Text>
               </TouchableOpacity>
             </GlassCard>
           </>
         )}
 
         {/* Transactions list */}
-        <SectionTitle>Transactions</SectionTitle>
+        <SectionTitle>{t("Transactions")}</SectionTitle>
         {loadingHistory ? (
           <ActivityIndicator size="small" color={COLORS.primary} style={{ marginVertical: 20 }} />
         ) : realTransactions.length === 0 ? (
           <Text style={{ color: COLORS.textMuted, fontSize: 13, textAlign: "center", marginVertical: 20 }}>
-            No transactions yet.
+            {t("No transactions yet.")}
           </Text>
         ) : (
           <View style={styles.transactionsList}>

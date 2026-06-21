@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useClerk } from "@clerk/clerk-react";
 import { Users, Wallet, Star, Calendar, Clock, Video, BookOpen, LogOut, ShieldAlert, Award } from "lucide-react";
-import { AuthService, ConsultantService } from "../services/api";
+import { AuthService, ConsultantService, WalletService } from "../services/api";
 import logo from "../assets/logo.png";
 
 const WEEKDAYS = [
@@ -23,6 +23,9 @@ export default function ConsultantDashboard() {
   const [dbUser, setDbUser] = useState<any>(null);
   const [bookings, setBookings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<"dashboard" | "earnings">("dashboard");
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [loadingTransactions, setLoadingTransactions] = useState(false);
 
   // Profile Modal State (if profile is incomplete)
   const [showProfileModal, setShowProfileModal] = useState(false);
@@ -99,9 +102,27 @@ export default function ConsultantDashboard() {
     }
   };
 
+  const loadTransactions = async () => {
+    try {
+      setLoadingTransactions(true);
+      const res = await WalletService.getHistory();
+      setTransactions(res.transactions || []);
+    } catch (err) {
+      console.error("Failed to load transactions:", err);
+    } finally {
+      setLoadingTransactions(false);
+    }
+  };
+
   useEffect(() => {
     loadData();
   }, []);
+
+  useEffect(() => {
+    if (dbUser?.consultantProfile && activeTab === "earnings") {
+      loadTransactions();
+    }
+  }, [activeTab, dbUser?.consultantProfile]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -352,9 +373,25 @@ export default function ConsultantDashboard() {
         </div>
 
         <nav className="sidebar-nav">
-          <button className="nav-item active" onClick={() => setSidebarOpen(false)}>
+          <button
+            className={`nav-item ${activeTab === "dashboard" ? "active" : ""}`}
+            onClick={() => {
+              setActiveTab("dashboard");
+              setSidebarOpen(false);
+            }}
+          >
             <Calendar size={18} />
             <span className="nav-label">Dashboard</span>
+          </button>
+          <button
+            className={`nav-item ${activeTab === "earnings" ? "active" : ""}`}
+            onClick={() => {
+              setActiveTab("earnings");
+              setSidebarOpen(false);
+            }}
+          >
+            <Wallet size={18} />
+            <span className="nav-label">Earnings</span>
           </button>
         </nav>
 
@@ -507,239 +544,311 @@ export default function ConsultantDashboard() {
           </section>
 
           {/* Dashboard Grid */}
-          <div className="dashboard-main-grid animate-fade-in">
-            {/* Availability Scheduler */}
-            <section className="dashboard-section glass-card">
-              <div className="section-header-box">
-                <Calendar size={20} color="var(--primary)" />
-                <h2>Schedule Availability Slots</h2>
-              </div>
-              
-              <form onSubmit={handleAddSlots} className="scheduler-form">
-                {scheduleErr && <div className="schedule-error">{scheduleErr}</div>}
-                {scheduleSuccess && <div className="schedule-success">{scheduleSuccess}</div>}
+          {activeTab === "dashboard" ? (
+            <div className="dashboard-main-grid animate-fade-in">
+              {/* Availability Scheduler */}
+              <section className="dashboard-section glass-card">
+                <div className="section-header-box">
+                  <Calendar size={20} color="var(--primary)" />
+                  <h2>Schedule Availability Slots</h2>
+                </div>
+                
+                <form onSubmit={handleAddSlots} className="scheduler-form">
+                  {scheduleErr && <div className="schedule-error">{scheduleErr}</div>}
+                  {scheduleSuccess && <div className="schedule-success">{scheduleSuccess}</div>}
 
-                <div className="form-row">
-                  <div className="form-group flex-1">
-                    <label className="form-label">Start Date *</label>
+                  <div className="form-row">
+                    <div className="form-group flex-1">
+                      <label className="form-label">Start Date *</label>
+                      <input
+                        type="date"
+                        className="form-input"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                        disabled={scheduleLoading}
+                      />
+                    </div>
+                    <div className="form-group flex-1">
+                      <label className="form-label">End Date *</label>
+                      <input
+                        type="date"
+                        className="form-input"
+                        value={endDate}
+                        onChange={(e) => setEndDate(e.target.value)}
+                        disabled={scheduleLoading}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Active Weekdays *</label>
+                    <div className="days-row">
+                      {WEEKDAYS.map((day) => {
+                        const isSelected = selectedDays.includes(day.value);
+                        return (
+                          <button
+                            key={day.value}
+                            type="button"
+                            className={`day-circle ${isSelected ? "selected" : ""}`}
+                            onClick={() => {
+                              if (isSelected) {
+                                setSelectedDays(selectedDays.filter((d) => d !== day.value));
+                              } else {
+                                setSelectedDays([...selectedDays, day.value]);
+                              }
+                            }}
+                            disabled={scheduleLoading}
+                          >
+                            {day.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="form-group">
+                    <label className="form-label">Time Slot (e.g. 10:00 AM) *</label>
                     <input
-                      type="date"
+                      type="text"
                       className="form-input"
-                      value={startDate}
-                      onChange={(e) => setStartDate(e.target.value)}
+                      placeholder="e.g., 10:00 AM, 02:30 PM"
+                      value={slotTime}
+                      onChange={(e) => setSlotTime(e.target.value)}
                       disabled={scheduleLoading}
                     />
                   </div>
-                  <div className="form-group flex-1">
-                    <label className="form-label">End Date *</label>
-                    <input
-                      type="date"
-                      className="form-input"
-                      value={endDate}
-                      onChange={(e) => setEndDate(e.target.value)}
-                      disabled={scheduleLoading}
-                    />
+
+                  <button type="submit" className="btn btn-primary" disabled={scheduleLoading}>
+                    {scheduleLoading ? "Adding Slots..." : "Add Slots"}
+                  </button>
+                </form>
+
+                {/* My Availability Slots List */}
+                <div style={{ marginTop: "24px", paddingTop: "20px", borderTop: "1px solid var(--border)" }}>
+                  <h3 style={{ fontSize: "16px", fontWeight: "700", marginBottom: "16px", display: "flex", alignItems: "center", gap: "8px" }}>
+                    <Calendar size={16} color="var(--primary)" />
+                    My Availability Slots ({dbUser?.consultantProfile?.availability?.length || 0})
+                  </h3>
+                  <div className="slots-grid" style={{ 
+                    display: "grid", 
+                    gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))", 
+                    gap: "10px", 
+                    maxHeight: "220px", 
+                    overflowY: "auto", 
+                    paddingRight: "6px" 
+                  }}>
+                    {!dbUser?.consultantProfile?.availability || dbUser.consultantProfile.availability.length === 0 ? (
+                      <div className="empty-state" style={{ gridColumn: "1/-1", padding: "16px", textAlign: "center" }}>
+                        <p style={{ fontSize: "13px", color: "var(--text-muted)", margin: 0 }}>No availability slots created yet.</p>
+                      </div>
+                    ) : (
+                      dbUser.consultantProfile.availability.map((slot: any) => {
+                        const slotDate = new Date(slot.date).toLocaleDateString("en-IN", {
+                          day: "numeric",
+                          month: "short"
+                        });
+                        return (
+                          <div key={slot.id} className="slot-card-item" style={{
+                            background: slot.isBooked ? "rgba(239, 68, 68, 0.1)" : "rgba(255, 255, 255, 0.02)",
+                            border: `1px solid ${slot.isBooked ? "var(--error)" : "var(--border)"}`,
+                            borderRadius: "8px",
+                            padding: "10px",
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: "4px"
+                          }}>
+                            <div style={{ fontSize: "13px", fontWeight: "600" }}>{slotDate}</div>
+                            <div style={{ fontSize: "11px", color: "var(--text-muted)", display: "flex", alignItems: "center", gap: "4px" }}>
+                              <Clock size={10} /> {slot.timeSlot}
+                            </div>
+                            <span style={{
+                              alignSelf: "flex-start",
+                              fontSize: "9px",
+                              fontWeight: "700",
+                              padding: "1px 6px",
+                              borderRadius: "3px",
+                              background: slot.isBooked ? "rgba(239, 68, 68, 0.15)" : "rgba(16, 185, 129, 0.1)",
+                              color: slot.isBooked ? "var(--error)" : "var(--primary)"
+                            }}>
+                              {slot.isBooked ? "Booked" : "Available"}
+                            </span>
+                          </div>
+                        );
+                      })
+                    )}
                   </div>
                 </div>
+              </section>
 
-                <div className="form-group">
-                  <label className="form-label">Active Weekdays *</label>
-                  <div className="days-row">
-                    {WEEKDAYS.map((day) => {
-                      const isSelected = selectedDays.includes(day.value);
-                      return (
-                        <button
-                          key={day.value}
-                          type="button"
-                          className={`day-circle ${isSelected ? "selected" : ""}`}
-                          onClick={() => {
-                            if (isSelected) {
-                              setSelectedDays(selectedDays.filter((d) => d !== day.value));
-                            } else {
-                              setSelectedDays([...selectedDays, day.value]);
-                            }
-                          }}
-                          disabled={scheduleLoading}
-                        >
-                          {day.label}
-                        </button>
-                      );
-                    })}
-                  </div>
+              {/* Schedule Sessions List */}
+              <section className="dashboard-section glass-card">
+                <div className="section-header-box">
+                  <Clock size={20} color="var(--primary)" />
+                  <h2>My Schedule ({bookings.length})</h2>
                 </div>
 
-                <div className="form-group">
-                  <label className="form-label">Time Slot (e.g. 10:00 AM) *</label>
-                  <input
-                    type="text"
-                    className="form-input"
-                    placeholder="e.g., 10:00 AM, 02:30 PM"
-                    value={slotTime}
-                    onChange={(e) => setSlotTime(e.target.value)}
-                    disabled={scheduleLoading}
-                  />
-                </div>
-
-                <button type="submit" className="btn btn-primary" disabled={scheduleLoading}>
-                  {scheduleLoading ? "Adding Slots..." : "Add Slots"}
-                </button>
-              </form>
-
-              {/* My Availability Slots List */}
-              <div style={{ marginTop: "24px", paddingTop: "20px", borderTop: "1px solid var(--border)" }}>
-                <h3 style={{ fontSize: "16px", fontWeight: "700", marginBottom: "16px", display: "flex", alignItems: "center", gap: "8px" }}>
-                  <Calendar size={16} color="var(--primary)" />
-                  My Availability Slots ({dbUser?.consultantProfile?.availability?.length || 0})
-                </h3>
-                <div className="slots-grid" style={{ 
-                  display: "grid", 
-                  gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))", 
-                  gap: "10px", 
-                  maxHeight: "220px", 
-                  overflowY: "auto", 
-                  paddingRight: "6px" 
-                }}>
-                  {!dbUser?.consultantProfile?.availability || dbUser.consultantProfile.availability.length === 0 ? (
-                    <div className="empty-state" style={{ gridColumn: "1/-1", padding: "16px", textAlign: "center" }}>
-                      <p style={{ fontSize: "13px", color: "var(--text-muted)", margin: 0 }}>No availability slots created yet.</p>
+                <div className="sessions-list">
+                  {bookings.length === 0 ? (
+                    <div className="empty-state">
+                      <p>No upcoming client bookings scheduled.</p>
                     </div>
                   ) : (
-                    dbUser.consultantProfile.availability.map((slot: any) => {
-                      const slotDate = new Date(slot.date).toLocaleDateString("en-IN", {
-                        day: "numeric",
-                        month: "short"
-                      });
+                    bookings.map((booking) => (
+                      <div key={booking.id} className="booking-card glass-card">
+                        <div className="booking-card-header">
+                          <div>
+                            <h3>{booking.name || "Client"}</h3>
+                            <p className="booking-datetime">
+                              {booking.date.split("T")[0]} | {booking.time}
+                            </p>
+                          </div>
+                          <span className={`badge ${booking.status === "CONFIRMED" ? "badge-approved" : "badge-pending"}`}>
+                            {booking.status}
+                          </span>
+                        </div>
+
+                        {booking.notes && (
+                          <div className="booking-notes-display">
+                            <strong>Session Notes:</strong>
+                            <p>{booking.notes}</p>
+                          </div>
+                        )}
+
+                        <div className="booking-actions">
+                          {booking.dailyRoomUrl && (
+                            <button
+                              className="btn btn-primary btn-sm"
+                              onClick={() => {
+                                const path = booking.dailyRoomUrl;
+                                navigate(path);
+                              }}
+                            >
+                              <Video size={16} /> Join Consultation
+                            </button>
+                          )}
+
+                          {activeNotesBookingId === booking.id ? (
+                            <div className="notes-editor-box">
+                              {notesErr && <div className="notes-error">{notesErr}</div>}
+                              <textarea
+                                className="form-input"
+                                rows={3}
+                                placeholder="Enter consultation details, budget notes, design ideas..."
+                                value={sessionNotes}
+                                onChange={(e) => setSessionNotes(e.target.value)}
+                                disabled={notesLoading}
+                              />
+                              <div className="notes-editor-actions">
+                                <button
+                                  type="button"
+                                  className="btn btn-secondary btn-sm"
+                                  onClick={() => {
+                                    setActiveNotesBookingId(null);
+                                    setSessionNotes("");
+                                  }}
+                                  disabled={notesLoading}
+                                >
+                                  Cancel
+                                </button>
+                                <button
+                                  type="button"
+                                  className="btn btn-primary btn-sm"
+                                  onClick={() => handleSaveNotes(booking.id)}
+                                  disabled={notesLoading}
+                                >
+                                  {notesLoading ? "Saving..." : "Save Notes"}
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <button
+                              className="btn btn-secondary btn-sm"
+                              onClick={() => {
+                                setActiveNotesBookingId(booking.id);
+                                setSessionNotes(booking.notes || "");
+                              }}
+                            >
+                              <BookOpen size={16} /> {booking.notes ? "Update Notes" : "Add Note"}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </section>
+            </div>
+          ) : (
+            <div className="earnings-container animate-fade-in" style={{ marginTop: "24px" }}>
+              <div className="glass-card" style={{ padding: "24px" }}>
+                <h2 style={{ marginBottom: "20px", display: "flex", alignItems: "center", gap: "10px" }}>
+                  <Wallet color="var(--primary)" /> Earnings & Payout Ledger
+                </h2>
+                <div className="earnings-summary" style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+                  gap: "20px",
+                  marginBottom: "30px"
+                }}>
+                  <div className="stat-card" style={{ background: "rgba(255, 255, 255, 0.02)", border: "1px solid var(--border)", borderRadius: "16px", padding: "20px" }}>
+                    <span style={{ fontSize: "13px", color: "var(--text-muted)" }}>Total Balance / Earnings</span>
+                    <h3 style={{ fontSize: "28px", fontWeight: "900", margin: "8px 0 0 0", color: "var(--primary)" }}>₹{totalEarnings.toLocaleString("en-IN")}</h3>
+                  </div>
+                  <div className="stat-card" style={{ background: "rgba(255, 255, 255, 0.02)", border: "1px solid var(--border)", borderRadius: "16px", padding: "20px" }}>
+                    <span style={{ fontSize: "13px", color: "var(--text-muted)" }}>Consultation Bookings</span>
+                    <h3 style={{ fontSize: "28px", fontWeight: "900", margin: "8px 0 0 0", color: "#ffffff" }}>{bookings.length}</h3>
+                  </div>
+                </div>
+
+                <h3 style={{ fontSize: "18px", fontWeight: "700", marginBottom: "16px" }}>Transaction Ledger</h3>
+                {loadingTransactions ? (
+                  <div style={{ textAlign: "center", padding: "40px 0" }}>
+                    <div className="spinner" style={{ margin: "0 auto 12px auto" }} />
+                    <p style={{ color: "var(--text-muted)", fontSize: "14px" }}>Loading transaction history...</p>
+                  </div>
+                ) : transactions.length === 0 ? (
+                  <div style={{ textAlign: "center", padding: "40px", border: "1px dashed var(--border)", borderRadius: "16px" }}>
+                    <p style={{ color: "var(--text-muted)", fontSize: "14px", margin: 0 }}>No earnings transactions recorded yet.</p>
+                  </div>
+                ) : (
+                  <div className="transactions-list-box" style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                    {transactions.map((tx) => {
+                      const isCredit = tx.type === "CREDIT" || tx.type === "credit";
                       return (
-                        <div key={slot.id} className="slot-card-item" style={{
-                          background: slot.isBooked ? "rgba(239, 68, 68, 0.1)" : "rgba(255, 255, 255, 0.02)",
-                          border: `1px solid ${slot.isBooked ? "var(--error)" : "var(--border)"}`,
-                          borderRadius: "8px",
-                          padding: "10px",
+                        <div key={tx.id} style={{
                           display: "flex",
-                          flexDirection: "column",
-                          gap: "4px"
+                          justifyContent: "space-between",
+                          alignItems: "center",
+                          padding: "16px 20px",
+                          background: "rgba(255, 255, 255, 0.02)",
+                          border: "1px solid var(--border)",
+                          borderRadius: "12px"
                         }}>
-                          <div style={{ fontSize: "13px", fontWeight: "600" }}>{slotDate}</div>
-                          <div style={{ fontSize: "11px", color: "var(--text-muted)", display: "flex", alignItems: "center", gap: "4px" }}>
-                            <Clock size={10} /> {slot.timeSlot}
+                          <div>
+                            <h4 style={{ margin: 0, fontSize: "15px", fontWeight: "600", color: "#ffffff" }}>{tx.description || tx.title || "Consultation Payout"}</h4>
+                            <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>
+                              {new Date(tx.createdAt).toLocaleDateString("en-IN", {
+                                day: "numeric",
+                                month: "short",
+                                year: "numeric"
+                              })}
+                            </span>
                           </div>
                           <span style={{
-                            alignSelf: "flex-start",
-                            fontSize: "9px",
+                            fontSize: "16px",
                             fontWeight: "700",
-                            padding: "1px 6px",
-                            borderRadius: "3px",
-                            background: slot.isBooked ? "rgba(239, 68, 68, 0.15)" : "rgba(16, 185, 129, 0.1)",
-                            color: slot.isBooked ? "var(--error)" : "var(--primary)"
+                            color: isCredit ? "#10b981" : "var(--primary)"
                           }}>
-                            {slot.isBooked ? "Booked" : "Available"}
+                            {isCredit ? "+" : "-"}₹{tx.amount}
                           </span>
                         </div>
                       );
-                    })
-                  )}
-                </div>
-              </div>
-            </section>
-
-            {/* Schedule Sessions List */}
-            <section className="dashboard-section glass-card">
-              <div className="section-header-box">
-                <Clock size={20} color="var(--primary)" />
-                <h2>My Schedule ({bookings.length})</h2>
-              </div>
-
-              <div className="sessions-list">
-                {bookings.length === 0 ? (
-                  <div className="empty-state">
-                    <p>No upcoming client bookings scheduled.</p>
+                    })}
                   </div>
-                ) : (
-                  bookings.map((booking) => (
-                    <div key={booking.id} className="booking-card glass-card">
-                      <div className="booking-card-header">
-                        <div>
-                          <h3>{booking.name || "Client"}</h3>
-                          <p className="booking-datetime">
-                            {booking.date.split("T")[0]} | {booking.time}
-                          </p>
-                        </div>
-                        <span className={`badge ${booking.status === "CONFIRMED" ? "badge-approved" : "badge-pending"}`}>
-                          {booking.status}
-                        </span>
-                      </div>
-
-                      {booking.notes && (
-                        <div className="booking-notes-display">
-                          <strong>Session Notes:</strong>
-                          <p>{booking.notes}</p>
-                        </div>
-                      )}
-
-                      <div className="booking-actions">
-                        {booking.dailyRoomUrl && (
-                          <button
-                            className="btn btn-primary btn-sm"
-                            onClick={() => {
-                              const path = booking.dailyRoomUrl;
-                              navigate(path);
-                            }}
-                          >
-                            <Video size={16} /> Join Consultation
-                          </button>
-                        )}
-
-                        {activeNotesBookingId === booking.id ? (
-                          <div className="notes-editor-box">
-                            {notesErr && <div className="notes-error">{notesErr}</div>}
-                            <textarea
-                              className="form-input"
-                              rows={3}
-                              placeholder="Enter consultation details, budget notes, design ideas..."
-                              value={sessionNotes}
-                              onChange={(e) => setSessionNotes(e.target.value)}
-                              disabled={notesLoading}
-                            />
-                            <div className="notes-editor-actions">
-                              <button
-                                type="button"
-                                className="btn btn-secondary btn-sm"
-                                onClick={() => {
-                                  setActiveNotesBookingId(null);
-                                  setSessionNotes("");
-                                }}
-                                disabled={notesLoading}
-                              >
-                                Cancel
-                              </button>
-                              <button
-                                type="button"
-                                className="btn btn-primary btn-sm"
-                                onClick={() => handleSaveNotes(booking.id)}
-                                disabled={notesLoading}
-                              >
-                                {notesLoading ? "Saving..." : "Save Notes"}
-                              </button>
-                            </div>
-                          </div>
-                        ) : (
-                          <button
-                            className="btn btn-secondary btn-sm"
-                            onClick={() => {
-                              setActiveNotesBookingId(booking.id);
-                              setSessionNotes(booking.notes || "");
-                            }}
-                          >
-                            <BookOpen size={16} /> {booking.notes ? "Update Notes" : "Add Note"}
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))
                 )}
               </div>
-            </section>
-          </div>
+            </div>
+          )}
         </main>
       )}
 

@@ -291,15 +291,26 @@ export class AuthController {
     try {
       const userId = req.user!.id;
 
+      const hasConsultantProfile = await prisma.consultant.findUnique({
+        where: { userId }
+      });
+
       await prisma.user.update({
         where: { id: userId },
         data: {
           isActive: false,
           deletedAt: new Date(),
+          role: "USER",
+          isRoleLocked: false,
+          ...(hasConsultantProfile ? {
+            consultantProfile: {
+              delete: true
+            }
+          } : {})
         },
       });
 
-      logger.info(`User soft-deleted account: ${userId}`);
+      logger.info(`User soft-deleted account: ${userId} (role unlocked & reset to USER, consultant profile deleted)`);
       return res.json({ message: "Account deleted successfully in database" });
     } catch (error) {
       next(error);

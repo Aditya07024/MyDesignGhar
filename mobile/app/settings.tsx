@@ -9,6 +9,8 @@ import {
   Alert,
   TextInput,
   Platform,
+  Modal,
+  FlatList,
 } from "react-native";
 import { useRouter } from "expo-router";
 import {
@@ -21,16 +23,24 @@ import {
   LogOut,
   ChevronRight,
   Edit3,
+  Lock,
+  KeyRound,
+  Check,
+  X,
+  Eye,
+  EyeOff,
 } from "lucide-react-native";
 import { COLORS, Avatar, Button, GlassCard, useTranslation, useStyles } from "../components/ui-kit";
 import { useApp } from "../store/app";
-import { useAuth } from "@clerk/clerk-expo";
+import { SUPPORTED_LANGUAGES, type AppLanguage } from "../store/app";
+import { useAuth, useUser } from "@clerk/clerk-expo";
 import { AuthService } from "../lib/api/services";
 
 export default function SettingsScreen() {
   const router = useRouter();
-  const { user, userName, theme, toggleTheme, logout, setUser, language, setLanguage } = useApp();
+  const { user: appUser, userName, theme, toggleTheme, logout, setUser, language, setLanguage } = useApp();
   const { signOut } = useAuth();
+  const { user: clerkUser } = useUser();
   const dark = theme === "dark";
   const t = useTranslation();
   const styles = useStyles(getStyles);
@@ -42,14 +52,27 @@ export default function SettingsScreen() {
   });
 
   const [isEditing, setIsEditing] = useState(false);
-  const [editedName, setEditedName] = useState(user?.fullName || userName);
+  const [editedName, setEditedName] = useState(appUser?.fullName || userName);
   const [saving, setSaving] = useState(false);
 
+  // Password change state
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordSaving, setPasswordSaving] = useState(false);
+  const [showCurrentPwd, setShowCurrentPwd] = useState(false);
+  const [showNewPwd, setShowNewPwd] = useState(false);
+  const [passwordError, setPasswordError] = useState("");
+
+  // Language picker modal state
+  const [showLangPicker, setShowLangPicker] = useState(false);
+
   useEffect(() => {
-    if (user?.fullName) {
-      setEditedName(user.fullName);
+    if (appUser?.fullName) {
+      setEditedName(appUser.fullName);
     }
-  }, [user?.fullName]);
+  }, [appUser?.fullName]);
 
   const handleSaveProfile = async () => {
     if (editedName.trim().length < 2) {
@@ -59,9 +82,9 @@ export default function SettingsScreen() {
     try {
       const res = await AuthService.updateProfile({ fullName: editedName.trim() });
       if (res && res.profile) {
-        if (user) {
+        if (appUser) {
           setUser({
-            ...user,
+            ...appUser,
             fullName: res.profile.fullName,
           });
         }
@@ -72,6 +95,48 @@ export default function SettingsScreen() {
       Alert.alert("Error", err.response?.data?.message || "Failed to update profile.");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    setPasswordError("");
+    if (!currentPassword.trim()) {
+      setPasswordError("Current password is required.");
+      return;
+    }
+    if (newPassword.length < 8) {
+      setPasswordError("New password must be at least 8 characters.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordError("Passwords do not match.");
+      return;
+    }
+    setPasswordSaving(true);
+    try {
+      await clerkUser?.updatePassword({
+        currentPassword,
+        newPassword,
+        signOutOfOtherSessions: false,
+      });
+      if (Platform.OS === "web") {
+        alert("Password updated successfully!");
+      } else {
+        Alert.alert("Success", "Password updated successfully!");
+      }
+      setShowPasswordForm(false);
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (err: any) {
+      const msg =
+        err?.errors?.[0]?.longMessage ||
+        err?.errors?.[0]?.message ||
+        err?.message ||
+        "Failed to update password. Please check your current password.";
+      setPasswordError(msg);
+    } finally {
+      setPasswordSaving(false);
     }
   };
 
@@ -95,7 +160,7 @@ export default function SettingsScreen() {
   };
 
   const performLogout = async () => {
-    logout(); // Clear local Zustand auth state first
+    logout();
     try {
       await signOut();
       router.replace("/(auth)/login");
@@ -105,27 +170,12 @@ export default function SettingsScreen() {
     }
   };
 
-  const handleLanguageChange = () => {
-    if (Platform.OS === "web") {
-      const selectHindi = window.confirm("Switch language to हिन्दी (Hindi)? Select Cancel to keep English.");
-      if (selectHindi) {
-        setLanguage("hi");
-      } else {
-        setLanguage("en");
-      }
-      return;
-    }
-
-    Alert.alert(
-      t("Language"),
-      t("Select Language") || "Select Language / भाषा चुनें",
-      [
-        { text: "English", onPress: () => setLanguage("en") },
-        { text: "हिन्दी (Hindi)", onPress: () => setLanguage("hi") },
-        { text: t("Cancel"), style: "cancel" }
-      ]
-    );
+  const handleLanguageSelect = (lang: AppLanguage) => {
+    setLanguage(lang);
+    setShowLangPicker(false);
   };
+
+  const currentLangLabel = SUPPORTED_LANGUAGES.find(l => l.code === language)?.native || "English";
 
   const handleDeleteAccount = () => {
     if (Platform.OS === "web") {
@@ -166,6 +216,23 @@ export default function SettingsScreen() {
     }
   };
 
+  const renderLanguageItem = ({ item }: { item: typeof SUPPORTED_LANGUAGES[0] }) => {
+    const isSelected = item.code === language;
+    return (
+      <TouchableOpacity
+        onPress={() => handleLanguageSelect(item.code)}
+        style={[styles.langItem, isSelected && styles.langItemSelected]}
+        activeOpacity={0.7}
+      >
+        <View style={styles.langItemLeft}>
+          <Text style={[styles.langNative, isSelected && styles.langTextSelected]}>{item.native}</Text>
+          <Text style={[styles.langLabel, isSelected && styles.langLabelSelected]}>{item.label}</Text>
+        </View>
+        {isSelected && <Check size={20} color={COLORS.primary} />}
+      </TouchableOpacity>
+    );
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
@@ -176,7 +243,7 @@ export default function SettingsScreen() {
 
         {/* Profile Card */}
         <View style={styles.profileCard}>
-          <Avatar seed={user?.fullName || userName} size={64} />
+          <Avatar seed={appUser?.fullName || userName} size={64} />
           
           {isEditing ? (
             <View style={styles.editForm}>
@@ -197,9 +264,9 @@ export default function SettingsScreen() {
             </View>
           ) : (
             <View style={styles.profileInfo}>
-              <Text style={styles.profileName}>{user?.fullName || userName}</Text>
-              <Text style={styles.profileEmail}>{user?.email || "No email linked"}</Text>
-              <Text style={styles.profilePhone}>{user?.phone || "No phone linked"}</Text>
+              <Text style={styles.profileName}>{appUser?.fullName || userName}</Text>
+              <Text style={styles.profileEmail}>{appUser?.email || "No email linked"}</Text>
+              <Text style={styles.profilePhone}>{appUser?.phone || "No phone linked"}</Text>
             </View>
           )}
 
@@ -210,6 +277,118 @@ export default function SettingsScreen() {
             >
               <Edit3 size={18} color={COLORS.primary} />
             </TouchableOpacity>
+          )}
+        </View>
+
+        {/* Security Section – Change Password */}
+        <Text style={styles.sectionHeading}>{t("Security")}</Text>
+        <View style={styles.settingsGroup}>
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => {
+              setShowPasswordForm(!showPasswordForm);
+              setPasswordError("");
+            }}
+            style={[styles.settingsRow, !showPasswordForm && styles.lastRow]}
+          >
+            <View style={styles.settingsRowLeft}>
+              <View style={styles.iconContainer}>
+                <KeyRound size={20} color={COLORS.primary} />
+              </View>
+              <Text style={styles.settingsLabel}>{t("Change Password")}</Text>
+            </View>
+            <ChevronRight
+              size={18}
+              color={COLORS.textMuted}
+              style={showPasswordForm ? { transform: [{ rotate: "90deg" }] } : undefined}
+            />
+          </TouchableOpacity>
+
+          {showPasswordForm && (
+            <View style={styles.passwordForm}>
+              {passwordError ? (
+                <View style={styles.passwordErrorBox}>
+                  <Text style={styles.passwordErrorText}>{passwordError}</Text>
+                </View>
+              ) : null}
+
+              <View style={styles.passwordInputRow}>
+                <Lock size={16} color={COLORS.textMuted} style={{ marginRight: 8 }} />
+                <TextInput
+                  value={currentPassword}
+                  onChangeText={setCurrentPassword}
+                  placeholder={t("Current Password")}
+                  placeholderTextColor={COLORS.textMuted}
+                  secureTextEntry={!showCurrentPwd}
+                  style={styles.passwordInput}
+                  autoCapitalize="none"
+                />
+                <TouchableOpacity onPress={() => setShowCurrentPwd(!showCurrentPwd)}>
+                  {showCurrentPwd ? (
+                    <EyeOff size={18} color={COLORS.textMuted} />
+                  ) : (
+                    <Eye size={18} color={COLORS.textMuted} />
+                  )}
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.passwordInputRow}>
+                <Lock size={16} color={COLORS.textMuted} style={{ marginRight: 8 }} />
+                <TextInput
+                  value={newPassword}
+                  onChangeText={setNewPassword}
+                  placeholder={t("New Password")}
+                  placeholderTextColor={COLORS.textMuted}
+                  secureTextEntry={!showNewPwd}
+                  style={styles.passwordInput}
+                  autoCapitalize="none"
+                />
+                <TouchableOpacity onPress={() => setShowNewPwd(!showNewPwd)}>
+                  {showNewPwd ? (
+                    <EyeOff size={18} color={COLORS.textMuted} />
+                  ) : (
+                    <Eye size={18} color={COLORS.textMuted} />
+                  )}
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.passwordInputRow}>
+                <Lock size={16} color={COLORS.textMuted} style={{ marginRight: 8 }} />
+                <TextInput
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  placeholder={t("Confirm Password")}
+                  placeholderTextColor={COLORS.textMuted}
+                  secureTextEntry={!showNewPwd}
+                  style={styles.passwordInput}
+                  autoCapitalize="none"
+                />
+              </View>
+
+              <View style={styles.passwordActions}>
+                <TouchableOpacity
+                  onPress={() => {
+                    setShowPasswordForm(false);
+                    setCurrentPassword("");
+                    setNewPassword("");
+                    setConfirmPassword("");
+                    setPasswordError("");
+                  }}
+                  style={styles.passwordCancelBtn}
+                >
+                  <Text style={styles.passwordCancelText}>{t("Cancel")}</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={handleChangePassword}
+                  style={[styles.passwordSaveBtn, passwordSaving && { opacity: 0.7 }]}
+                  disabled={passwordSaving}
+                >
+                  <Text style={styles.passwordSaveText}>
+                    {passwordSaving ? t("Saving") : t("Save")}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </View>
           )}
         </View>
 
@@ -245,8 +424,8 @@ export default function SettingsScreen() {
           {/* Push notifications toggle */}
           <TouchableOpacity
             activeOpacity={0.8}
-            onPress={() => setToggles((t) => ({ ...t, push: !t.push }))}
-            style={styles.settingsRow}
+            onPress={() => setToggles((prev) => ({ ...prev, push: !prev.push }))}
+            style={[styles.settingsRow, styles.lastRow]}
           >
             <View style={styles.settingsRowLeft}>
               <View style={styles.iconContainer}>
@@ -282,7 +461,7 @@ export default function SettingsScreen() {
             <ChevronRight size={18} color={COLORS.textMuted} />
           </TouchableOpacity>
 
-          <TouchableOpacity activeOpacity={0.8} onPress={handleLanguageChange} style={styles.settingsRow}>
+          <TouchableOpacity activeOpacity={0.8} onPress={() => setShowLangPicker(true)} style={styles.settingsRow}>
             <View style={styles.settingsRowLeft}>
               <View style={styles.iconContainer}>
                 <Globe size={20} color={COLORS.primary} />
@@ -290,7 +469,7 @@ export default function SettingsScreen() {
               <Text style={styles.settingsLabel}>{t("Language")}</Text>
             </View>
             <View style={styles.settingsRowRight}>
-              <Text style={styles.settingsHint}>{language === "hi" ? "हिन्दी" : "English"}</Text>
+              <Text style={styles.settingsHint}>{currentLangLabel}</Text>
               <ChevronRight size={18} color={COLORS.textMuted} />
             </View>
           </TouchableOpacity>
@@ -335,6 +514,32 @@ export default function SettingsScreen() {
           <Text style={styles.deleteAccountText}>{t("Delete Account")}</Text>
         </TouchableOpacity>
       </ScrollView>
+
+      {/* Language Picker Modal */}
+      <Modal
+        visible={showLangPicker}
+        animationType="slide"
+        transparent
+        onRequestClose={() => setShowLangPicker(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>{t("Select Language")}</Text>
+              <TouchableOpacity onPress={() => setShowLangPicker(false)} style={styles.modalCloseBtn}>
+                <X size={22} color={COLORS.text} />
+              </TouchableOpacity>
+            </View>
+            <FlatList
+              data={SUPPORTED_LANGUAGES}
+              keyExtractor={(item) => item.code}
+              renderItem={renderLanguageItem}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingBottom: 20 }}
+            />
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -501,6 +706,73 @@ const getStyles = (theme: "light" | "dark") => StyleSheet.create({
   thumbInactive: {
     alignSelf: "flex-start",
   },
+
+  // Password form styles
+  passwordForm: {
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+  },
+  passwordErrorBox: {
+    backgroundColor: "rgba(239, 68, 68, 0.1)",
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginBottom: 12,
+  },
+  passwordErrorText: {
+    color: COLORS.destructive,
+    fontSize: 13,
+    fontWeight: "500",
+  },
+  passwordInputRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: COLORS.cardAlt,
+    borderColor: COLORS.border,
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    marginBottom: 10,
+    height: 46,
+  },
+  passwordInput: {
+    flex: 1,
+    color: COLORS.text,
+    fontSize: 14,
+    height: 46,
+  },
+  passwordActions: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 4,
+  },
+  passwordCancelBtn: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    alignItems: "center",
+  },
+  passwordCancelText: {
+    color: COLORS.textMuted,
+    fontWeight: "600",
+    fontSize: 13,
+  },
+  passwordSaveBtn: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: COLORS.primary,
+    alignItems: "center",
+  },
+  passwordSaveText: {
+    color: "#12141a",
+    fontWeight: "700",
+    fontSize: 13,
+  },
+
+  // Logout & delete
   logoutBtn: {
     flexDirection: "row",
     alignItems: "center",
@@ -534,5 +806,72 @@ const getStyles = (theme: "light" | "dark") => StyleSheet.create({
     fontSize: 14,
     fontWeight: "700",
     color: COLORS.destructive,
+  },
+
+  // Language picker modal
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
+    justifyContent: "flex-end",
+  },
+  modalContent: {
+    backgroundColor: COLORS.card,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    maxHeight: "70%",
+    paddingBottom: Platform.OS === "ios" ? 34 : 20,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingVertical: 18,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: COLORS.text,
+  },
+  modalCloseBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: COLORS.cardAlt,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  langItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.border,
+  },
+  langItemSelected: {
+    backgroundColor: theme === "dark" ? "rgba(205, 162, 80, 0.08)" : "rgba(205, 162, 80, 0.06)",
+  },
+  langItemLeft: {
+    flexDirection: "column",
+  },
+  langNative: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: COLORS.text,
+  },
+  langLabel: {
+    fontSize: 12,
+    color: COLORS.textMuted,
+    marginTop: 2,
+  },
+  langTextSelected: {
+    color: COLORS.primary,
+  },
+  langLabelSelected: {
+    color: COLORS.primary,
   },
 });

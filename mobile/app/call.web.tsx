@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet, SafeAreaView } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { COLORS, useStyles, Button } from "../components/ui-kit";
+import { COLORS, useStyles, Button, useTranslation } from "../components/ui-kit";
 import {
   LiveKitRoom,
   VideoConference,
@@ -14,6 +14,7 @@ import "@livekit/components-styles";
 export default function CallScreen() {
   const router = useRouter();
   const styles = useStyles(getStyles);
+  const t = useTranslation();
   const { id: bookingId, token, url } = useLocalSearchParams();
 
   // Handle the string or string[] query params safely.
@@ -25,10 +26,10 @@ export default function CallScreen() {
       <SafeAreaView style={styles.container}>
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>
-            Missing connection token or server URL. Please try joining the call again.
+            {t("Missing connection token or server URL. Please try joining the call again.")}
           </Text>
           <Button
-            title="Go Back"
+            title={t("Go Back")}
             onPress={() => router.back()}
             style={{ marginTop: 20 }}
           />

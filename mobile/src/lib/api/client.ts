@@ -28,6 +28,8 @@ const processQueue = (error: any, token: string | null = null) => {
 };
 
 // Request Interceptor: Attach Access Token from Clerk if exists
+import { useApp } from "../../../store/app";
+
 apiClient.interceptors.request.use(
   async (config: any) => {
     if (typeof window !== "undefined") {
@@ -50,6 +52,16 @@ apiClient.interceptors.request.use(
         config.headers.Authorization = `Bearer ${token}`;
       }
     }
+    
+    try {
+      const language = useApp.getState().language || "en";
+      if (config.headers) {
+        config.headers["Accept-Language"] = language;
+      }
+    } catch (err) {
+      // Ignore if store not initialized yet
+    }
+    
     return config;
   },
   (error: any) => Promise.reject(error)

@@ -11,7 +11,7 @@ import {
   Clipboard,
 } from "react-native";
 import { Gift, Copy, Share2 } from "lucide-react-native";
-import { COLORS, Button, GlassCard, useStyles } from "../components/ui-kit";
+import { COLORS, Button, GlassCard, useStyles, useTranslation } from "../components/ui-kit";
 import { useApp } from "../store/app";
 
 const code = "DemoUser150";
@@ -23,13 +23,15 @@ const stats = [
 
 export default function ReferralScreen() {
   const styles = useStyles(getStyles);
+  const t = useTranslation();
+
   const handleCopy = () => {
     Clipboard.setString(code);
-    Alert.alert("Code Copied", `Referral code "${code}" has been copied to your clipboard.`);
+    Alert.alert(t("Code Copied"), t("Referral code '{code}' has been copied to your clipboard.").replace("{code}", code));
   };
 
   const handleShare = async (wa = false) => {
-    const text = `Redesign your home with AI on MyDesignGhar! Use my code ${code} for ₹150 off. https://mydesignghar.app`;
+    const text = t("Redesign your home with AI on MyDezineGhar! Use my code {code} for ₹150 off. https://mydezineghar.app").replace("{code}", code);
     
     if (wa) {
       const url = `whatsapp://send?text=${encodeURIComponent(text)}`;
@@ -38,7 +40,7 @@ export default function ReferralScreen() {
         if (canOpen) {
           await Linking.openURL(url);
         } else {
-          Alert.alert("WhatsApp not installed", "WhatsApp could not be opened on your device.");
+          Alert.alert(t("WhatsApp not installed"), t("WhatsApp could not be opened on your device."));
         }
       } catch (err) {
         // Fallback to standard share
@@ -58,18 +60,18 @@ export default function ReferralScreen() {
       <View style={styles.scrollContent}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Refer & Earn</Text>
+          <Text style={styles.headerTitle}>{t("Refer & Earn")}</Text>
         </View>
 
         {/* Gift Banner */}
         <View style={styles.banner}>
           <Gift size={44} color={COLORS.accent} style={styles.giftIcon} />
-          <Text style={styles.bannerTitle}>Earn ₹150 per friend</Text>
-          <Text style={styles.bannerSubtitle}>They get ₹150 off too. Everyone wins!</Text>
+          <Text style={styles.bannerTitle}>{t("Earn ₹150 per friend")}</Text>
+          <Text style={styles.bannerSubtitle}>{t("They get ₹150 off too. Everyone wins!")}</Text>
         </View>
 
         {/* Referral Code Row */}
-        <Text style={styles.sectionHeading}>Your referral code</Text>
+        <Text style={styles.sectionHeading}>{t("Your referral code")}</Text>
         <TouchableOpacity
           onPress={handleCopy}
           activeOpacity={0.8}
@@ -82,13 +84,13 @@ export default function ReferralScreen() {
         {/* Invite Buttons */}
         <View style={styles.btnRow}>
           <Button
-            title="Invite Friends"
+            title={t("Invite Friends")}
             icon={<Share2 size={16} color="#12141a" />}
             onPress={() => handleShare(false)}
             style={styles.inviteBtn}
           />
           <Button
-            title="WhatsApp"
+            title={t("WhatsApp")}
             variant="success"
             icon={<Share2 size={16} color="#ffffff" />}
             onPress={() => handleShare(true)}
@@ -102,7 +104,7 @@ export default function ReferralScreen() {
             {stats.map((s) => (
               <View key={s.label} style={styles.statCol}>
                 <Text style={styles.statVal}>{s.value}</Text>
-                <Text style={styles.statLabel}>{s.label}</Text>
+                <Text style={styles.statLabel}>{t(s.label)}</Text>
               </View>
             ))}
           </View>

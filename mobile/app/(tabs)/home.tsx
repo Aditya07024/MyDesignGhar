@@ -46,6 +46,7 @@ import {
   useAddSlotsMutation,
   useAddSessionNotesMutation,
   useNotificationsQuery,
+  useMeQuery,
 } from "../../hooks/useApi";
 
 const qaIcons: Record<string, any> = {
@@ -82,6 +83,15 @@ export default function HomeScreen() {
   const { data: designs = [] } = useDesignsQuery();
   const { data: bookings = [] } = useBookingsQuery();
   const { data: notifications = [] } = useNotificationsQuery();
+  
+  const isConsultant = user?.role === "CONSULTANT";
+  const { data: freshUser, refetch: refetchMe } = useMeQuery(isConsultant);
+
+  React.useEffect(() => {
+    if (freshUser) {
+      setUser(freshUser);
+    }
+  }, [freshUser]);
   
   const hasUnread = notifications.some((n: any) => !n.isRead);
 
@@ -126,11 +136,11 @@ export default function HomeScreen() {
 
   const handleCompleteProfile = async () => {
     if (completeName.trim().length < 2) {
-      return setModalErr("Please enter your full name.");
+      return setModalErr(t("Please enter your full name."));
     }
     const cleanPhone = completePhone.trim().replace(/\D/g, "");
     if (cleanPhone.length !== 10) {
-      return setModalErr("Please enter a valid 10-digit phone number.");
+      return setModalErr(t("Please enter a valid 10-digit phone number."));
     }
     
     setModalErr("");
@@ -145,10 +155,10 @@ export default function HomeScreen() {
       if (res && res.user) {
         setUser(res.user);
         setShowProfileModal(false);
-        Alert.alert("Success", "Profile completed successfully.");
+        Alert.alert(t("Success"), t("Profile completed successfully."));
       }
     } catch (err: any) {
-      setModalErr(err.response?.data?.message || "Failed to update profile. Please try again.");
+      setModalErr(err.response?.data?.message || t("Failed to update profile. Please try again."));
     } finally {
       setModalLoading(false);
     }
@@ -203,6 +213,7 @@ export default function HomeScreen() {
         setEndDate(formatDate(fortnightVal));
         setSelectedDays([1, 2, 3, 4, 5]);
         setSlotTime("");
+        refetchMe();
       },
       onError: (err: any) => {
         Alert.alert(t("Error") || "Error", err.response?.data?.message || "Failed to add availability slots.");
@@ -242,8 +253,6 @@ export default function HomeScreen() {
       { label: t("Consultants Booked"), value: String(bookingsCount), icon: "users" },
     ];
   }, [designs, bookings, t]);
-
-  const isConsultant = user?.role === "CONSULTANT";
 
   return (
     <SafeAreaView style={styles.container}>
@@ -568,8 +577,8 @@ export default function HomeScreen() {
               <View style={styles.modalLogoContainer}>
                 <Sparkles size={24} color="#12141a" />
               </View>
-              <Text style={styles.modalTitle}>Complete Profile</Text>
-              <Text style={styles.modalSubtitle}>Please provide your name and phone number to continue.</Text>
+              <Text style={styles.modalTitle}>{t("Complete Profile")}</Text>
+              <Text style={styles.modalSubtitle}>{t("Please provide your name and phone number to continue.")}</Text>
             </View>
 
             <View style={styles.modalForm}>
@@ -577,7 +586,7 @@ export default function HomeScreen() {
               <View style={styles.modalInputContainer}>
                 <User size={18} color={COLORS.textMuted} style={styles.modalInputIcon} />
                 <TextInput
-                  placeholder="Full name"
+                  placeholder={t("Full name")}
                   placeholderTextColor={COLORS.textMuted}
                   value={completeName}
                   onChangeText={setCompleteName}
@@ -589,7 +598,7 @@ export default function HomeScreen() {
               <View style={styles.modalInputContainer}>
                 <Phone size={18} color={COLORS.textMuted} style={styles.modalInputIcon} />
                 <TextInput
-                  placeholder="Phone number"
+                  placeholder={t("Phone number")}
                   placeholderTextColor={COLORS.textMuted}
                   value={completePhone}
                   onChangeText={setCompletePhone}
@@ -603,7 +612,7 @@ export default function HomeScreen() {
             {modalErr ? <Text style={styles.modalErrorText}>{modalErr}</Text> : null}
 
             <Button
-              title="Save & Continue"
+              title={t("Save & Continue")}
               full
               size="lg"
               loading={modalLoading}

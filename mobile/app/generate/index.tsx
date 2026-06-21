@@ -17,7 +17,7 @@ import {
 import { useRouter, useLocalSearchParams } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import { Camera, ImagePlus, Wand2, Sparkles } from "lucide-react-native";
-import { COLORS, Button, Chip, GlassCard, img, useStyles } from "../../components/ui-kit";
+import { COLORS, Button, Chip, GlassCard, img, useStyles, useTranslation } from "../../components/ui-kit";
 import { useApp } from "../../store/app";
 import { roomTypes, modernStyles, regionalStyles, budgets } from "../../src/lib/mock";
 import { useGenerateDesignMutation } from "../../hooks/useApi";
@@ -25,6 +25,7 @@ import { useGenerateDesignMutation } from "../../hooks/useApi";
 export default function GenerateScreen() {
   const router = useRouter();
   const styles = useStyles(getStyles);
+  const t = useTranslation();
   const params = useLocalSearchParams();
 
   const [imageUri, setImageUri] = useState<string | null>(null);
@@ -83,7 +84,7 @@ export default function GenerateScreen() {
   const handleTakePhoto = async () => {
     const hasPerm = await requestPermissions();
     if (!hasPerm) {
-      Alert.alert("Permissions needed", "We need camera access to capture your room.");
+      Alert.alert(t("Permissions needed"), t("We need camera access to capture your room."));
       return;
     }
     try {
@@ -104,7 +105,7 @@ export default function GenerateScreen() {
   const handlePickGallery = async () => {
     const hasPerm = await requestPermissions();
     if (!hasPerm) {
-      Alert.alert("Permissions needed", "We need library access to pick your room.");
+      Alert.alert(t("Permissions needed"), t("We need library access to pick your room."));
       return;
     }
     try {
@@ -179,9 +180,9 @@ export default function GenerateScreen() {
             <Sparkles size={24} color={COLORS.primary} />
           </View>
         </View>
-        <Text style={styles.loadingTitle}>Designing your space…</Text>
+        <Text style={styles.loadingTitle}>{t("Designing your space…")}</Text>
         <Text style={styles.loadingSubtitle}>
-          Crafting a beautiful {style} style {currentRoomName}
+          {t("Crafting a beautiful")} {t(style)} {t("style")} {t(currentRoomName)}
         </Text>
         {/* <Text style={styles.loadingTimer}>Estimated time: ~{Math.max(secondsLeft, 0)}s</Text> */}
         
@@ -201,8 +202,8 @@ export default function GenerateScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Page Header */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Generate Design</Text>
-          <Text style={styles.headerSubtitle}>Upload, customize and create</Text>
+          <Text style={styles.headerTitle}>{t("Generate Design")}</Text>
+          <Text style={styles.headerSubtitle}>{t("Upload, customize and create")}</Text>
         </View>
 
         {/* Upload Container */}
@@ -210,7 +211,7 @@ export default function GenerateScreen() {
           <View style={styles.uploadedContainer}>
             <Image source={{ uri: imageUri }} style={styles.uploadedImage} resizeMode="cover" />
             <TouchableOpacity onPress={() => setImageUri(null)} style={styles.changeBtn}>
-              <Text style={styles.changeText}>Change</Text>
+              <Text style={styles.changeText}>{t("Change")}</Text>
             </TouchableOpacity>
           </View>
         ) : (
@@ -218,17 +219,17 @@ export default function GenerateScreen() {
             <View style={styles.uploadIconContainer}>
               <ImagePlus size={28} color={COLORS.primary} />
             </View>
-            <Text style={styles.uploadPrompt}>Upload a room photo</Text>
+            <Text style={styles.uploadPrompt}>{t("Upload a room photo")}</Text>
             <View style={styles.uploadBtnRow}>
               <Button
-                title="Take Photo"
+                title={t("Take Photo")}
                 size="sm"
                 variant="outline"
                 icon={<Camera size={14} color="#ffffff" />}
                 onPress={handleTakePhoto}
               />
               <Button
-                title="Gallery"
+                title={t("Gallery")}
                 size="sm"
                 icon={<ImagePlus size={14} color="#12141a" />}
                 onPress={handlePickGallery}
@@ -238,7 +239,7 @@ export default function GenerateScreen() {
         )}
 
         {/* Room type picker */}
-        <Text style={styles.sectionHeading}>Room type</Text>
+        <Text style={styles.sectionHeading}>{t("Room type")}</Text>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -246,34 +247,34 @@ export default function GenerateScreen() {
         >
           {roomTypes.map((r) => (
             <Chip key={r.id} active={room === r.id} onPress={() => setRoom(r.id)}>
-              {r.emoji} {r.name}
+              {r.emoji} {t(r.name)}
             </Chip>
           ))}
         </ScrollView>
 
         {/* Style selection */}
-        <Text style={styles.sectionHeading}>Style</Text>
+        <Text style={styles.sectionHeading}>{t("Style")}</Text>
         <View style={styles.styleTabRow}>
-          {(["modern", "regional"] as const).map((t) => (
+          {(["modern", "regional"] as const).map((tVal) => (
             <TouchableOpacity
-              key={t}
+              key={tVal}
               activeOpacity={0.8}
               onPress={() => {
-                setStyleTab(t);
-                setStyle(t === "modern" ? modernStyles[0] : regionalStyles[0]);
+                setStyleTab(tVal);
+                setStyle(tVal === "modern" ? modernStyles[0] : regionalStyles[0]);
               }}
               style={[
                 styles.styleTabBtn,
-                styleTab === t && styles.styleTabBtnActive,
+                styleTab === tVal && styles.styleTabBtnActive,
               ]}
             >
               <Text
                 style={[
                   styles.styleTabText,
-                  styleTab === t && styles.styleTabTextActive,
+                  styleTab === tVal && styles.styleTabTextActive,
                 ]}
               >
-                {t === "modern" ? "Modern Styles" : "Regional Styles"}
+                {tVal === "modern" ? t("Modern Styles") : t("Regional Styles")}
               </Text>
             </TouchableOpacity>
           ))}
@@ -283,13 +284,13 @@ export default function GenerateScreen() {
         <View style={styles.styleChipsWrapper}>
           {activeStyles.map((s) => (
             <Chip key={s} active={style === s} onPress={() => setStyle(s)}>
-              {s}
+              {t(s)}
             </Chip>
           ))}
         </View>
 
         {/* Budget picker */}
-        <Text style={styles.sectionHeading}>Budget</Text>
+        <Text style={styles.sectionHeading}>{t("Budget")}</Text>
         <View style={styles.budgetRow}>
           {budgets.map((b) => (
             <TouchableOpacity
@@ -307,21 +308,21 @@ export default function GenerateScreen() {
                   budget === b ? styles.budgetTextActive : styles.budgetTextInactive,
                 ]}
               >
-                {b}
+                {t(b)}
               </Text>
             </TouchableOpacity>
           ))}
         </View>
 
         {/* Text prompt description */}
-        <Text style={styles.sectionHeading}>Describe your vision</Text>
+        <Text style={styles.sectionHeading}>{t("Describe your vision")}</Text>
         <View style={styles.promptContainer}>
           <TextInput
             multiline
             numberOfLines={3}
             value={prompt}
             onChangeText={setPrompt}
-            placeholder="e.g. warm earthy tones, lots of plants, cozy reading nook..."
+            placeholder={t("e.g. warm earthy tones, lots of plants, cozy reading nook...")}
             placeholderTextColor={COLORS.textMuted}
             style={styles.promptInput}
           />
@@ -329,7 +330,7 @@ export default function GenerateScreen() {
 
         {/* Submit */}
         <Button
-          title="Generate 3 Designs"
+          title={t("Generate 3 Designs")}
           full
           size="lg"
           icon={<Wand2 size={20} color="#12141a" />}

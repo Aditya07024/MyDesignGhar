@@ -3,11 +3,12 @@ import { View, Text, StyleSheet, Image, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
 import { useAuth } from "@clerk/clerk-expo";
 import { Sparkles } from "lucide-react-native";
-import { COLORS, img } from "../components/ui-kit";
+import { COLORS, img, useTranslation } from "../components/ui-kit";
 
 export default function IndexSplash() {
   const router = useRouter();
   const { isLoaded, isSignedIn } = useAuth();
+  const t = useTranslation();
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -16,7 +17,7 @@ export default function IndexSplash() {
       if (isSignedIn) {
         router.replace("/(tabs)/home");
       } else {
-        router.replace("/onboarding");
+        router.replace("/landing");
       }
     }, 2500);
 
@@ -46,9 +47,9 @@ export default function IndexSplash() {
         </View>
 
         <Text style={styles.title}>
-          MyDesign<Text style={styles.accentText}>Ghar</Text>
+          MyDezine<Text style={styles.accentText}>Ghar</Text>
         </Text>
-        <Text style={styles.subtitle}>AI Interior Design for India</Text>
+        <Text style={styles.subtitle}>{t("AI Interior Design for India")}</Text>
       </View>
 
       <View style={styles.loader}>
@@ -72,7 +73,7 @@ const styles = StyleSheet.create({
     width: 220,
     height: 220,
     borderRadius: 110,
-    backgroundColor: "rgba(140, 192, 235, 0.3)", // Sky Blue glow
+    backgroundColor: "rgba(205, 162, 80, 0.15)", // Luxury Gold glow
     opacity: 0.8,
   },
   glowRight: {
@@ -82,7 +83,7 @@ const styles = StyleSheet.create({
     width: 220,
     height: 220,
     borderRadius: 110,
-    backgroundColor: "rgba(255, 235, 204, 0.45)", // Peach glow
+    backgroundColor: "rgba(184, 143, 62, 0.1)", // Bronze glow
     opacity: 0.8,
   },
   content: {

@@ -1,18 +1,19 @@
 import React from "react";
 import { View, Text, StyleSheet, SafeAreaView } from "react-native";
 import { useRouter } from "expo-router";
-import { COLORS, useStyles, Button } from "../components/ui-kit";
+import { COLORS, useStyles, Button, useTranslation } from "../components/ui-kit";
 
 export default function CallScreen() {
   const router = useRouter();
   const styles = useStyles(getStyles);
+  const t = useTranslation();
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.nativeFallback}>
-        <Text style={styles.fallbackText}>Video calling is supported on Web only.</Text>
+        <Text style={styles.fallbackText}>{t("Video calling is supported on Web only.")}</Text>
         <Button
-          title="Go Back"
+          title={t("Go Back")}
           onPress={() => router.back()}
           style={{ marginTop: 20 }}
         />

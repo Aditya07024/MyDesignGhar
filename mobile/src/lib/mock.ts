@@ -1,7 +1,22 @@
 // Mock data for MyDesignGhar — UI demo only.
 
-export const img = (seed: string, w = 800, h = 600) =>
-  `https://picsum.photos/seed/${encodeURIComponent(seed)}/${w}/${h}`;
+const ROOM_IMAGES: Record<string, string> = {
+  "mdg-living": "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&q=80",
+  "mdg-bedroom": "https://images.unsplash.com/photo-1616594039964-ae9021a400a0?auto=format&fit=crop&q=80",
+  "mdg-kitchen": "https://images.unsplash.com/photo-1556911220-e15b29be8c8f?auto=format&fit=crop&q=80",
+  "mdg-bathroom": "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?auto=format&fit=crop&q=80",
+  "mdg-dining": "https://images.unsplash.com/photo-1604014237800-1c9102c219da?auto=format&fit=crop&q=80",
+  "mdg-office": "https://images.unsplash.com/photo-1524758631624-e2822e304c36?auto=format&fit=crop&q=80",
+  "mdg-kids": "https://images.unsplash.com/photo-1565183997392-2f6f122e5912?auto=format&fit=crop&q=80",
+  "mdg-balcony": "https://images.unsplash.com/photo-1506974210756-8e1b8985d348?auto=format&fit=crop&q=80",
+};
+
+export const img = (seed: string, w = 800, h = 600) => {
+  if (ROOM_IMAGES[seed]) {
+    return `${ROOM_IMAGES[seed]}&w=${w}&h=${h}`;
+  }
+  return `https://picsum.photos/seed/${encodeURIComponent(seed)}/${w}/${h}`;
+};
 
 export interface RoomType {
   id: string;

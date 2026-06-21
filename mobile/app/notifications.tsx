@@ -9,7 +9,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { Sparkles, CheckCircle, Calendar, Gift } from "lucide-react-native";
-import { COLORS, EmptyState, useStyles } from "../components/ui-kit";
+import { COLORS, EmptyState, useStyles, useTranslation } from "../components/ui-kit";
 import { useApp } from "../store/app";
 import { notifications } from "../src/lib/mock";
 import { useNotificationsQuery, useMarkNotificationsReadMutation, useMarkNotificationReadMutation } from "../hooks/useApi";
@@ -23,6 +23,7 @@ const icons: Record<string, any> = {
 
 export default function NotificationsScreen() {
   const styles = useStyles(getStyles);
+  const t = useTranslation();
   const { data: realNotifications, isLoading } = useNotificationsQuery();
   const markReadMutation = useMarkNotificationsReadMutation();
   const markSingleReadMutation = useMarkNotificationReadMutation();
@@ -51,14 +52,14 @@ export default function NotificationsScreen() {
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.headerTitle}>Notifications</Text>
+          <Text style={styles.headerTitle}>{t("Notifications")}</Text>
           {displayNotifications.some((n: any) => n.unread) && (
             <TouchableOpacity
               onPress={() => markReadMutation.mutate()}
               style={styles.markReadBtn}
               activeOpacity={0.8}
             >
-              <Text style={styles.markReadText}>Mark all read</Text>
+              <Text style={styles.markReadText}>{t("Mark all read")}</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -68,8 +69,8 @@ export default function NotificationsScreen() {
         ) : displayNotifications.length === 0 ? (
           <EmptyState
             icon={<Sparkles size={32} color={COLORS.primary} />}
-            title="All caught up"
-            body="You have no new notifications."
+            title={t("All caught up")}
+            body={t("You have no new notifications.")}
           />
         ) : (
           <View style={styles.list}>
@@ -88,10 +89,10 @@ export default function NotificationsScreen() {
                   </View>
                   <View style={styles.content}>
                     <View style={styles.row}>
-                      <Text style={styles.itemTitle}>{n.title}</Text>
+                      <Text style={styles.itemTitle}>{t(n.title)}</Text>
                       <Text style={styles.itemTime}>{n.time}</Text>
                     </View>
-                    <Text style={styles.itemBody}>{n.body}</Text>
+                    <Text style={styles.itemBody}>{t(n.body)}</Text>
                   </View>
                   {n.unread && (
                     <TouchableOpacity
@@ -99,7 +100,7 @@ export default function NotificationsScreen() {
                       style={styles.readBtn}
                       activeOpacity={0.7}
                     >
-                      <Text style={styles.readBtnText}>Read</Text>
+                      <Text style={styles.readBtnText}>{t("Read")}</Text>
                     </TouchableOpacity>
                   )}
                 </View>

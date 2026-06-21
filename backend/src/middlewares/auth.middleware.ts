@@ -134,6 +134,29 @@ export async function authenticate(req: AuthenticatedRequest, res: Response, nex
       }
     }
 
+    if (user && (!user.isActive || user.deletedAt)) {
+      const hasConsultantProfile = await prisma.consultant.findUnique({
+        where: { userId: user.id }
+      });
+
+      user = await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          isActive: true,
+          deletedAt: null,
+          role: "USER",
+          isRoleLocked: false,
+          ...(hasConsultantProfile ? {
+            consultantProfile: {
+              delete: true
+            }
+          } : {})
+        },
+        include: { profile: true, wallet: true },
+      });
+      logger.info(`Reactivated soft-deleted/inactive user: ${user.id}, role reset to USER, consultantProfile deleted.`);
+    }
+
     req.user = {
       id: user!.id,
       clerkId: user!.clerkId,

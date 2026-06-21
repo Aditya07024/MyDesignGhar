@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { SlidersHorizontal, Briefcase } from "lucide-react-native";
-import { COLORS, Avatar, Chip, StarRating, useStyles } from "../../components/ui-kit";
+import { COLORS, Avatar, Chip, StarRating, useStyles, useTranslation } from "../../components/ui-kit";
 import { useApp } from "../../store/app";
 import { consultants } from "../../src/lib/mock";
 import { useConsultantsQuery } from "../../hooks/useApi";
@@ -21,6 +21,7 @@ const sortFilters = ["Top Rated", "Nearby", "Budget", "Experience"];
 export default function ConsultantsScreen() {
   const router = useRouter();
   const styles = useStyles(getStyles);
+  const t = useTranslation();
   const [activeFilter, setActiveFilter] = useState("Top Rated");
 
   const { data: realConsultants, isLoading } = useConsultantsQuery();
@@ -46,8 +47,8 @@ export default function ConsultantsScreen() {
       {/* Top Header Row */}
       <View style={styles.header}>
         <View style={styles.headerText}>
-          <Text style={styles.title}>Designers</Text>
-          <Text style={styles.subtitle}>Book verified interior experts</Text>
+          <Text style={styles.title}>{t("Designers")}</Text>
+          <Text style={styles.subtitle}>{t("Book verified interior experts")}</Text>
         </View>
         <TouchableOpacity style={styles.filterBtn} activeOpacity={0.8}>
           <SlidersHorizontal size={20} color="#ffffff" />
@@ -67,7 +68,7 @@ export default function ConsultantsScreen() {
               active={activeFilter === f}
               onPress={() => setActiveFilter(f)}
             >
-              {f}
+              {t(f)}
             </Chip>
           ))}
         </ScrollView>
@@ -104,7 +105,7 @@ export default function ConsultantsScreen() {
                 <View style={styles.cardMeta}>
                   <View style={styles.metaRow}>
                     <Briefcase size={13} color={COLORS.textMuted} />
-                    <Text style={styles.metaText}>{item.experience} yrs exp</Text>
+                    <Text style={styles.metaText}>{item.experience} {t("yrs exp")}</Text>
                   </View>
                   <Text style={styles.metaSeparator}>·</Text>
                   <Text style={styles.metaText}>{item.state}</Text>
@@ -112,7 +113,7 @@ export default function ConsultantsScreen() {
               </View>
               <View style={styles.cardRight}>
                 <Text style={styles.cardPrice}>₹{item.price}</Text>
-                <Text style={styles.cardPriceLabel}>/session</Text>
+                <Text style={styles.cardPriceLabel}>/{t("session")}</Text>
               </View>
             </TouchableOpacity>
           )}

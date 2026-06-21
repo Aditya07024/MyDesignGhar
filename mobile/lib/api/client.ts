@@ -34,16 +34,25 @@ export const apiClient = axios.create({
   },
 });
 
-let sessionToken: string | null = null;
+import { useApp } from "../../store/app";
 
 export const setSessionToken = (token: string | null) => {
-  sessionToken = token;
+  useApp.getState().setSessionToken(token);
 };
 
 apiClient.interceptors.request.use(
   (config) => {
-    if (sessionToken && config.headers) {
-      config.headers.Authorization = `Bearer ${sessionToken}`;
+    const token = useApp.getState().sessionToken;
+    if (token && config.headers) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    try {
+      const language = useApp.getState().language || "en";
+      if (config.headers) {
+        config.headers["Accept-Language"] = language;
+      }
+    } catch (err) {
+      // Ignore if store not initialized yet
     }
     return config;
   },

@@ -13,7 +13,7 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { Search, Plus, ImageOff } from "lucide-react-native";
-import { COLORS, Button, Chip, EmptyState, useStyles } from "../../components/ui-kit";
+import { COLORS, Button, Chip, EmptyState, useStyles, useTranslation } from "../../components/ui-kit";
 import { useApp } from "../../store/app";
 import { designs, img } from "../../src/lib/mock";
 import { useDesignsQuery } from "../../hooks/useApi";
@@ -23,6 +23,7 @@ const filters = ["All", "Purchased", "Favorites", "Recent"] as const;
 export default function DesignsScreen() {
   const router = useRouter();
   const styles = useStyles(getStyles);
+  const t = useTranslation();
   const favorites = useApp((s) => s.favorites);
   const [filter, setFilter] = useState<(typeof filters)[number]>("All");
   const [q, setQ] = useState("");
@@ -75,9 +76,9 @@ export default function DesignsScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>My Designs</Text>
+        <Text style={styles.headerTitle}>{t("My Designs")}</Text>
         <Button
-          title="New"
+          title={t("New")}
           size="sm"
           icon={<Plus size={16} color="#12141a" />}
           onPress={() => router.push("/generate")}
@@ -90,7 +91,7 @@ export default function DesignsScreen() {
         <TextInput
           value={q}
           onChangeText={setQ}
-          placeholder="Search designs..."
+          placeholder={t("Search designs...")}
           placeholderTextColor={COLORS.textMuted}
           style={styles.searchInput}
         />
@@ -105,7 +106,7 @@ export default function DesignsScreen() {
         >
           {filters.map((f) => (
             <Chip key={f} active={filter === f} onPress={() => setFilter(f)}>
-              {f}
+              {t(f)}
             </Chip>
           ))}
         </ScrollView>
@@ -119,11 +120,11 @@ export default function DesignsScreen() {
         <ScrollView contentContainerStyle={styles.centerContainer}>
           <EmptyState
             icon={<ImageOff size={32} color={COLORS.primary} />}
-            title="No designs found"
-            body="Try a different filter or generate a new AI design!"
+            title={t("No designs found")}
+            body={t("Try a different filter or generate a new AI design!")}
             action={
               <Button
-                title="Create a design"
+                title={t("Create a design")}
                 onPress={() => router.push("/generate")}
               />
             }

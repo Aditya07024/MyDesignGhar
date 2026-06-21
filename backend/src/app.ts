@@ -10,6 +10,7 @@ import { swaggerSpec } from "./config/swagger";
 import apiRouter from "./routes";
 import { errorHandler } from "./middlewares/error.middleware";
 import { apiLimiter } from "./middlewares/rate-limit.middleware";
+import { translationMiddleware } from "./middlewares/translation.middleware";
 
 const app = express();
 
@@ -53,6 +54,9 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.get("/status", (_req, res) => {
   res.json({ status: "healthy", timestamp: new Date() });
 });
+
+// Translation Middleware for dynamic localized content
+app.use(translationMiddleware);
 
 // App Router
 app.use("/api", apiRouter);

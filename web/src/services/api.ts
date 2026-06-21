@@ -130,3 +130,14 @@ export const AdminService = {
     return res.data;
   },
 };
+
+export const WalletService = {
+  async getBalance() {
+    const res = await apiClient.get("/wallets/balance");
+    return res.data;
+  },
+  async getHistory() {
+    const res = await apiClient.get("/wallets/history");
+    return res.data;
+  },
+};
