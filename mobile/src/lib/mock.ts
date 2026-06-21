@@ -17,7 +17,7 @@ export const img = (seed: string, w = 800, h = 600) => {
   if (url.includes("localhost:5001") || url.includes("127.0.0.1:5001")) {
     try {
       const { API_BASE_URL } = require("../../lib/api/client");
-      const apiHost = API_BASE_URL.replace("/api", "");
+      const apiHost = API_BASE_URL.replace(/\/api$/, "");
       url = url.replace(/http:\/\/(localhost|127\.0\.0\.1):5001/, apiHost);
     } catch (e) {
       // Ignore
