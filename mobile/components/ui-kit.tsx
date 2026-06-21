@@ -4936,17 +4936,27 @@ export function SectionTitle({
 // --- BEFORE AFTER VISUALIZER ---
 const resolveUri = (seedOrUrl: string) => {
   if (!seedOrUrl) return "";
-  if (
-    seedOrUrl.startsWith("http://") ||
-    seedOrUrl.startsWith("https://") ||
-    seedOrUrl.startsWith("file://") ||
-    seedOrUrl.startsWith("content://") ||
-    seedOrUrl.startsWith("data:") ||
-    seedOrUrl.startsWith("/")
-  ) {
-    return seedOrUrl;
+  let url = seedOrUrl;
+  if (url.includes("localhost:5001") || url.includes("127.0.0.1:5001")) {
+    try {
+      const { API_BASE_URL } = require("../lib/api/client");
+      const apiHost = API_BASE_URL.replace("/api", "");
+      url = url.replace(/http:\/\/(localhost|127\.0\.0\.1):5001/, apiHost);
+    } catch (e) {
+      // Ignore
+    }
   }
-  return img(seedOrUrl, 800, 600);
+  if (
+    url.startsWith("http://") ||
+    url.startsWith("https://") ||
+    url.startsWith("file://") ||
+    url.startsWith("content://") ||
+    url.startsWith("data:") ||
+    url.startsWith("/")
+  ) {
+    return url;
+  }
+  return img(url, 800, 600);
 };
 
 export function BeforeAfter({
