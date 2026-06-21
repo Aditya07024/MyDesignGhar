@@ -4946,17 +4946,20 @@ const resolveUri = (seedOrUrl: string) => {
       // Ignore
     }
   }
+  
+  let finalUri = url;
   if (
-    url.startsWith("http://") ||
-    url.startsWith("https://") ||
-    url.startsWith("file://") ||
-    url.startsWith("content://") ||
-    url.startsWith("data:") ||
-    url.startsWith("/")
+    !(url.startsWith("http://") ||
+      url.startsWith("https://") ||
+      url.startsWith("file://") ||
+      url.startsWith("content://") ||
+      url.startsWith("data:") ||
+      url.startsWith("/"))
   ) {
-    return url;
+    finalUri = img(url, 800, 600);
   }
-  return img(url, 800, 600);
+  console.log(`[resolveUri] Input: "${seedOrUrl}" -> Resolved: "${finalUri}"`);
+  return finalUri;
 };
 
 export function BeforeAfter({
