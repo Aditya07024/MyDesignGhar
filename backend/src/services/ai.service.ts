@@ -66,6 +66,10 @@ export class AIService {
     if (env.HF_API_KEY) {
       try {
         logger.info(`Attempting HuggingFace FLUX.1-schnell generation with seed ${seed}...`);
+        
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 seconds timeout
+        
         const response = await fetch(
           "https://router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-schnell",
           {
@@ -81,8 +85,11 @@ export class AIService {
                 seed: seed,
               },
             }),
+            signal: controller.signal,
           }
         );
+        clearTimeout(timeoutId);
+        
         if (response.ok) {
           logger.info(`HuggingFace FLUX.1-schnell succeeded for seed ${seed}`);
           const arrayBuffer = await response.arrayBuffer();
@@ -103,14 +110,14 @@ export class AIService {
       
       let data: Buffer | null = null;
       let attempt = 1;
-      const maxRetries = 3;
+      const maxRetries = 2; // Reduce from 3 to 2
       
       while (attempt <= maxRetries) {
         try {
           logger.info(`Sending Pollinations AI request (Attempt ${attempt}/${maxRetries}) for seed ${seed}...`);
           const response = await axios.get(pollinationsUrl, {
             responseType: "arraybuffer",
-            timeout: 25000,
+            timeout: 10000, // Reduce from 25000 to 10000 (10 seconds)
           });
           if (response.status === 200 && response.data) {
             logger.info(`Pollinations AI succeeded for seed ${seed} on attempt ${attempt}`);
@@ -120,7 +127,7 @@ export class AIService {
         } catch (error: any) {
           logger.warn(`Pollinations AI attempt ${attempt} failed for seed ${seed}: ${error.message}`);
           if (attempt < maxRetries) {
-            const delay = attempt * 3000;
+            const delay = attempt * 2000; // Reduce retry delay
             logger.info(`Waiting ${delay}ms before retrying Pollinations AI for seed ${seed}...`);
             await new Promise((resolve) => setTimeout(resolve, delay));
           }

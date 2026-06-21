@@ -102,22 +102,17 @@ export class DesignController {
         logger.info(`Reusing ${actualReusedCount} previous design images`);
       }
 
-      // Generate remaining new designs using fallbacks
-      const designBuffers: Buffer[] = [];
-      for (let i = 0; i < newImagesCount; i++) {
-        if (i > 0) {
-          logger.info(`Waiting 2000ms before starting generation of image ${i + 1} of ${newImagesCount}...`);
-          await new Promise((resolve) => setTimeout(resolve, 2000));
-        }
+      // Generate remaining new designs in parallel using fallbacks
+      const promises = Array.from({ length: newImagesCount }).map(async (_, i) => {
         const seed = Math.floor(Math.random() * 1000000);
-        const designBuffer = await AIService.generateImageFromProviders(
+        return AIService.generateImageFromProviders(
           positivePrompt,
           negativePrompt,
           seed,
           file.buffer
         );
-        designBuffers.push(designBuffer);
-      }
+      });
+      const designBuffers = await Promise.all(promises);
 
       // 6. Create parent design record
       const design = await prisma.design.create({

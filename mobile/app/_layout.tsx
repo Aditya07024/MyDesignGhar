@@ -45,6 +45,7 @@ function TokenSync() {
   const { getToken, userId } = useAuth();
   const hydrateAuth = useApp((s) => s.hydrateAuth);
   const hydrateTheme = useApp((s) => s.hydrateTheme);
+  const sessionToken = useApp((s) => s.sessionToken);
   const segments = useSegments();
 
   useEffect(() => {
@@ -70,8 +71,8 @@ function TokenSync() {
     const sync = async () => {
       try {
         if (userId) {
-          // If already logged in, skip syncing to avoid duplicate API requests and rate limits
-          if (useApp.getState().isAuthed) {
+          // If we already have a valid session token, skip syncing to avoid duplicate API requests and rate limits
+          if (useApp.getState().sessionToken) {
             return;
           }
 
@@ -112,7 +113,7 @@ function TokenSync() {
     };
     sync();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId, segments]);
+  }, [userId, segments, sessionToken]);
 
   return null;
 }
