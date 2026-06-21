@@ -147,10 +147,11 @@ export default function Login({ isAdminOnly = false }: LoginProps) {
     if (!isLoaded) return;
     try {
       setLoading(true);
+      const redirectPath = isAdminOnly ? "/admin/login" : "/consultant/login";
       await signIn.authenticateWithRedirect({
         strategy: "oauth_google",
-        redirectUrl: window.location.origin + "/consultant/login",
-        redirectUrlComplete: window.location.origin + "/consultant/login",
+        redirectUrl: window.location.origin + redirectPath,
+        redirectUrlComplete: window.location.origin + redirectPath,
       });
     } catch (err: any) {
       setError(err.errors?.[0]?.message || "Failed to initiate Google sign in.");
@@ -162,10 +163,11 @@ export default function Login({ isAdminOnly = false }: LoginProps) {
     if (!isLoaded) return;
     try {
       setLoading(true);
+      const redirectPath = isAdminOnly ? "/admin/login" : "/consultant/login";
       await signIn.authenticateWithRedirect({
         strategy: "oauth_apple",
-        redirectUrl: window.location.origin + "/consultant/login",
-        redirectUrlComplete: window.location.origin + "/consultant/login",
+        redirectUrl: window.location.origin + redirectPath,
+        redirectUrlComplete: window.location.origin + redirectPath,
       });
     } catch (err: any) {
       setError(err.errors?.[0]?.message || "Failed to initiate Apple sign in.");
