@@ -20,6 +20,11 @@ export const AuthService = {
     const res = await apiClient.delete("/auth/delete");
     return res.data;
   },
+
+  async savePushToken(token: string) {
+    const res = await apiClient.post("/auth/push-token", { token });
+    return res.data;
+  },
 };
 
 export const DesignService = {

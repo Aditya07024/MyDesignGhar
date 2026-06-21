@@ -11,5 +11,6 @@ router.get("/me", authenticate as any, AuthController.getMe as any);
 // User Profile management
 router.put("/profile", authenticate as any, AuthController.updateProfile as any);
 router.delete("/delete", authenticate as any, AuthController.deleteAccount as any);
+router.post("/push-token", authenticate as any, AuthController.savePushToken as any);
 
 export default router;

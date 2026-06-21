@@ -502,7 +502,7 @@ export default function HomeScreen() {
                     <Image source={{ uri: img(r.seed, 160, 160) }} style={styles.roomImage} />
                   </View>
                   <Text style={styles.roomText} numberOfLines={1}>
-                    {r.name}
+                    {t(r.name)}
                   </Text>
                 </TouchableOpacity>
               ))}

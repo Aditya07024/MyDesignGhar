@@ -316,4 +316,25 @@ export class AuthController {
       next(error);
     }
   }
+
+  /**
+   * Save user push token for native notifications
+   */
+  static async savePushToken(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+      const { token } = req.body;
+      if (!token) {
+        return res.status(400).json({ message: "Token is required" });
+      }
+      await prisma.user.update({
+        where: { id: req.user!.id },
+        data: { pushToken: token },
+      });
+      logger.info(`Saved push token for User ${req.user!.id}`);
+      return res.json({ message: "Push token updated successfully" });
+    } catch (err: any) {
+      next(err);
+    }
+  }
 }
+

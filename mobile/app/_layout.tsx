@@ -1,14 +1,27 @@
-import { Slot, Stack } from "expo-router";
+import { Slot, Stack, useSegments } from "expo-router";
 import { ClerkProvider, useAuth } from "@clerk/clerk-expo";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, SafeAreaView, StatusBar, Platform, ActivityIndicator } from "react-native";
+import { View, Text, StyleSheet, SafeAreaView, StatusBar, Platform, ActivityIndicator, Appearance } from "react-native";
 import { tokenCache } from "../lib/auth-cache";
 import { setSessionToken } from "../lib/api/client";
 import { useApp } from "../store/app";
 import { COLORS, Button } from "../components/ui-kit";
 import { AuthService } from "../lib/api/services";
 import { Wrench, RefreshCw } from "lucide-react-native";
+import * as Notifications from "expo-notifications";
+import * as SecureStore from "expo-secure-store";
+import { registerForPushNotificationsAsync, registerPushToken } from "../lib/push";
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+    shouldShowBanner: true,
+    shouldShowList: true,
+  }),
+});
 
 const CLERK_PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY || "";
 
@@ -22,17 +35,45 @@ const queryClient = new QueryClient();
 function TokenSync() {
   const { getToken, userId } = useAuth();
   const hydrateAuth = useApp((s) => s.hydrateAuth);
+  const hydrateTheme = useApp((s) => s.hydrateTheme);
+  const segments = useSegments();
 
   useEffect(() => {
+    hydrateTheme();
     hydrateAuth();
+
+    // Listen to system theme appearance changes
+    const subscription = Appearance.addChangeListener(({ colorScheme }) => {
+      // Only override theme dynamically if there is no user-saved preference stored in SecureStore
+      // Alternatively, we can let system changes automatically update if the user hasn't toggled manually,
+      // but to align default to system:
+      SecureStore.getItemAsync("mdg_theme").then((storedTheme) => {
+        if (!storedTheme) {
+          useApp.getState().setTheme(colorScheme === "dark" ? "dark" : "light");
+        }
+      }).catch(() => {});
+    });
+
+    return () => subscription.remove();
   }, []);
 
   useEffect(() => {
     const sync = async () => {
       try {
         if (userId) {
+          // If already logged in, skip syncing to avoid duplicate API requests and rate limits
+          if (useApp.getState().isAuthed) {
+            return;
+          }
+
           const token = await getToken();
           setSessionToken(token);
+          
+          // Skip background sync on login/register screens to let the forms handle it manually
+          const isAuthScreen = segments[0] === "(auth)";
+          if (isAuthScreen) {
+            return;
+          }
           
           // Fetch user profile from PostgreSQL backend, sync roles, and update Zustand store
           const selectedRole = useApp.getState().selectedRole || "USER";
@@ -40,6 +81,13 @@ function TokenSync() {
           if (res && res.user) {
             useApp.getState().login(token || undefined, res.user);
             useApp.getState().setBackendDown(false);
+
+            // Register push notifications
+            registerForPushNotificationsAsync().then((pushToken) => {
+              if (pushToken) {
+                registerPushToken(pushToken);
+              }
+            });
           }
         } else {
           setSessionToken(null);
@@ -55,7 +103,7 @@ function TokenSync() {
     };
     sync();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [userId]);
+  }, [userId, segments]);
 
   return null;
 }
@@ -176,29 +224,32 @@ export default function RootLayout() {
               headerStyle: {
                 backgroundColor: COLORS.card,
               },
-            headerTintColor: COLORS.text,
-            headerTitleStyle: {
-              fontWeight: "bold",
-            },
-            contentStyle: {
-              backgroundColor: COLORS.background,
-            },
-          }}
-        >
-          <Stack.Screen name="index" options={{ headerShown: false }} />
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-          <Stack.Screen name="onboarding" options={{ headerShown: false }} />
-          <Stack.Screen name="landing" options={{ headerShown: false }} />
-          <Stack.Screen name="generate/index" options={{ title: "Generate Design" }} />
-          <Stack.Screen name="generate/result" options={{ title: "AI Redesign Result" }} />
-          <Stack.Screen name="call" options={{ title: "Consultation Call" }} />
-          <Stack.Screen name="notifications" options={{ title: "Notifications" }} />
-          <Stack.Screen name="booking" options={{ title: "Book Consultation" }} />
-          <Stack.Screen name="referral" options={{ title: "Referral Program" }} />
-          <Stack.Screen name="sessions" options={{ title: "Session Details" }} />
-          <Stack.Screen name="settings" options={{ title: "Settings" }} />
-        </Stack>
+              headerTintColor: COLORS.text,
+              headerTitleStyle: {
+                fontWeight: "bold",
+              },
+              headerBackTitle: "",
+              // @ts-ignore
+              headerBackTitleVisible: false,
+              contentStyle: {
+                backgroundColor: COLORS.background,
+              },
+            }}
+          >
+            <Stack.Screen name="index" options={{ headerShown: false, headerBackTitle: "" }} />
+            <Stack.Screen name="(tabs)" options={{ headerShown: false, headerBackTitle: "" }} />
+            <Stack.Screen name="(auth)" options={{ headerShown: false, headerBackTitle: "" }} />
+            <Stack.Screen name="onboarding" options={{ headerShown: false, headerBackTitle: "" }} />
+            <Stack.Screen name="landing" options={{ headerShown: false, headerBackTitle: "" }} />
+            <Stack.Screen name="generate/index" options={{ title: "Generate Design" }} />
+            <Stack.Screen name="generate/result" options={{ title: "AI Redesign Result" }} />
+            <Stack.Screen name="call" options={{ title: "Consultation Call" }} />
+            <Stack.Screen name="notifications" options={{ title: "Notifications" }} />
+            <Stack.Screen name="booking" options={{ title: "Book Consultation" }} />
+            <Stack.Screen name="referral" options={{ title: "Referral Program" }} />
+            <Stack.Screen name="sessions" options={{ title: "Session Details" }} />
+            <Stack.Screen name="settings" options={{ title: "Settings" }} />
+          </Stack>
         )}
         {isBackendDown && (
           <View style={StyleSheet.absoluteFill}>

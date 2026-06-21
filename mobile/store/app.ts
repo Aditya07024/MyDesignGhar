@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import * as SecureStore from "expo-secure-store";
+import { Appearance } from "react-native";
 
 type Theme = "light" | "dark";
 
@@ -85,14 +86,25 @@ interface AppState {
 
 export const useApp = create<AppState>((set, get) => ({
   hydrated: false,
-  theme: "light",
+  theme: Appearance.getColorScheme() === "dark" ? "dark" : "light",
   setTheme: (t) => {
     set({ theme: t });
+    SecureStore.setItemAsync("mdg_theme", t).catch(() => {});
   },
   toggleTheme: () => get().setTheme(get().theme === "dark" ? "light" : "dark"),
-  hydrateTheme: () => {
-    // Default fallback theme
-    set({ theme: "light" });
+  hydrateTheme: async () => {
+    try {
+      const storedTheme = await SecureStore.getItemAsync("mdg_theme");
+      if (storedTheme === "light" || storedTheme === "dark") {
+        set({ theme: storedTheme });
+      } else {
+        const systemTheme = Appearance.getColorScheme();
+        set({ theme: systemTheme === "dark" ? "dark" : "light" });
+      }
+    } catch {
+      const systemTheme = Appearance.getColorScheme();
+      set({ theme: systemTheme === "dark" ? "dark" : "light" });
+    }
   },
 
   language: "en",

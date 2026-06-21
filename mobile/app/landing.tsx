@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
   Platform,
 } from "react-native";
 import { useRouter } from "expo-router";
+import { useAuth } from "@clerk/clerk-expo";
 import {
   Sparkles,
   Users,
@@ -31,6 +32,14 @@ const { width } = Dimensions.get("window");
 
 export default function LandingScreen() {
   const router = useRouter();
+  const { isLoaded, isSignedIn } = useAuth();
+
+  useEffect(() => {
+    if (isLoaded && isSignedIn) {
+      router.replace("/(tabs)/home");
+    }
+  }, [isLoaded, isSignedIn]);
+
   const styles = useStyles(getStyles);
   const t = useTranslation();
   const [activeTenet, setActiveTenet] = useState<number | null>(0);

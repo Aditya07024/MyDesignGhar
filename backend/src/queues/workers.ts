@@ -2,6 +2,7 @@ import { Worker, Job } from "bullmq";
 import { redisConnection } from "../config/redis";
 import { logger } from "../utils/logger";
 import { prisma } from "../config/db";
+import axios from "axios";
 
 // 1. Notification worker: simulated email and push deliveries
 const notificationWorker = new Worker(
@@ -13,7 +14,7 @@ const notificationWorker = new Worker(
     // Fetch user details for notification channels
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { email: true, phone: true },
+      select: { email: true, phone: true, pushToken: true },
     });
 
     if (!user) {
@@ -25,8 +26,24 @@ const notificationWorker = new Worker(
       logger.info(`[SMTP Mock] Email sent to ${user.email} - Subject: ${title} - Body: ${body}`);
     }
 
-    // Push notification dispatch simulation
-    logger.info(`[Push Service Mock] Push notification sent to User ${userId} device`);
+    // Push notification dispatch using Expo Push API
+    if (user.pushToken) {
+      try {
+        logger.info(`[Push Service] Sending Expo push notification to ${user.pushToken}`);
+        const response = await axios.post("https://exp.host/--/api/v2/push/send", {
+          to: user.pushToken,
+          sound: "default",
+          title,
+          body,
+          data: { notificationId, type },
+        });
+        logger.info(`[Push Service] Expo push status: ${response.status} - Data: ${JSON.stringify(response.data)}`);
+      } catch (err: any) {
+        logger.error(`[Push Service] Failed to send Expo push notification: ${err.response?.data ? JSON.stringify(err.response.data) : err.message}`);
+      }
+    } else {
+      logger.info(`[Push Service Mock] No pushToken for User ${userId}. Simulated fallback only.`);
+    }
   },
   { connection: redisConnection as any }
 );

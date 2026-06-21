@@ -52,6 +52,7 @@ model User {
   isActive        Boolean       @default(true)
   isPhoneVerified Boolean       @default(false)
   isEmailVerified Boolean       @default(false)
+  pushToken       String?       @map("push_token")
   referralCode    String        @unique @default("")
   createdAt       DateTime      @default(now()) @map("created_at")
   updatedAt       DateTime      @updatedAt @map("updated_at")
