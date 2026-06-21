@@ -1,3 +1,12 @@
+if (typeof global.DOMException === "undefined") {
+  global.DOMException = class DOMException extends Error {
+    constructor(message?: string, name?: string) {
+      super(message);
+      this.name = name || "DOMException";
+    }
+  } as any;
+}
+
 import { Slot, Stack, useSegments } from "expo-router";
 import { ClerkProvider, useAuth } from "@clerk/clerk-expo";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
