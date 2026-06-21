@@ -66,33 +66,33 @@ export class AIService {
     if (env.HF_API_KEY) {
       try {
         logger.info(`Attempting HuggingFace FLUX.1-schnell generation with seed ${seed}...`);
-        const response = await axios.post(
+        const response = await fetch(
           "https://router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-schnell",
           {
-            inputs: positivePrompt,
-            parameters: {
-              seed: seed,
-            },
-          },
-          {
+            method: "POST",
             headers: {
               Authorization: `Bearer ${env.HF_API_KEY}`,
               "Content-Type": "application/json",
               Accept: "image/jpeg",
             },
-            responseType: "arraybuffer",
-            timeout: 25000,
+            body: JSON.stringify({
+              inputs: positivePrompt,
+              parameters: {
+                seed: seed,
+              },
+            }),
           }
         );
-        if (response.status === 200 && response.data) {
+        if (response.ok) {
           logger.info(`HuggingFace FLUX.1-schnell succeeded for seed ${seed}`);
-          return Buffer.from(response.data);
+          const arrayBuffer = await response.arrayBuffer();
+          return Buffer.from(arrayBuffer);
+        } else {
+          const errorMsg = await response.text();
+          logger.warn(`HuggingFace FLUX.1-schnell failed with status ${response.status}: ${errorMsg}. Trying next fallback...`);
         }
       } catch (error: any) {
-        const errorMsg = error.response
-          ? Buffer.from(error.response.data).toString("utf-8")
-          : error.message;
-        logger.warn(`HuggingFace FLUX.1-schnell failed: ${errorMsg}. Trying next fallback...`);
+        logger.warn(`HuggingFace FLUX.1-schnell failed: ${error.message}. Trying next fallback...`);
       }
     }
 
@@ -100,13 +100,36 @@ export class AIService {
     try {
       logger.info(`Attempting Pollinations AI generation with seed ${seed}...`);
       const pollinationsUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(positivePrompt)}?width=1024&height=1024&seed=${seed}&nologo=true`;
-      const response = await axios.get(pollinationsUrl, {
-        responseType: "arraybuffer",
-        timeout: 15000,
-      });
-      if (response.status === 200 && response.data) {
-        logger.info(`Pollinations AI succeeded for seed ${seed}`);
-        return Buffer.from(response.data);
+      
+      let data: Buffer | null = null;
+      let attempt = 1;
+      const maxRetries = 3;
+      
+      while (attempt <= maxRetries) {
+        try {
+          logger.info(`Sending Pollinations AI request (Attempt ${attempt}/${maxRetries}) for seed ${seed}...`);
+          const response = await axios.get(pollinationsUrl, {
+            responseType: "arraybuffer",
+            timeout: 25000,
+          });
+          if (response.status === 200 && response.data) {
+            logger.info(`Pollinations AI succeeded for seed ${seed} on attempt ${attempt}`);
+            data = Buffer.from(response.data);
+            break;
+          }
+        } catch (error: any) {
+          logger.warn(`Pollinations AI attempt ${attempt} failed for seed ${seed}: ${error.message}`);
+          if (attempt < maxRetries) {
+            const delay = attempt * 3000;
+            logger.info(`Waiting ${delay}ms before retrying Pollinations AI for seed ${seed}...`);
+            await new Promise((resolve) => setTimeout(resolve, delay));
+          }
+        }
+        attempt++;
+      }
+
+      if (data) {
+        return data;
       }
     } catch (error: any) {
       logger.warn(`Pollinations AI failed: ${error.message || error}. Trying next fallback...`);

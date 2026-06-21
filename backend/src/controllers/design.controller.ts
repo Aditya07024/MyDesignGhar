@@ -105,6 +105,10 @@ export class DesignController {
       // Generate remaining new designs using fallbacks
       const designBuffers: Buffer[] = [];
       for (let i = 0; i < newImagesCount; i++) {
+        if (i > 0) {
+          logger.info(`Waiting 2000ms before starting generation of image ${i + 1} of ${newImagesCount}...`);
+          await new Promise((resolve) => setTimeout(resolve, 2000));
+        }
         const seed = Math.floor(Math.random() * 1000000);
         const designBuffer = await AIService.generateImageFromProviders(
           positivePrompt,
