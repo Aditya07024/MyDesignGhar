@@ -5,7 +5,11 @@ import { Phone, Lock, User, Mail, Award, DollarSign, BookOpen, Image as ImageIco
 import { AuthService, ConsultantService, setSessionToken } from "../services/api";
 import logo from "../assets/logo.png";
 
-export default function SignUp() {
+interface SignUpProps {
+  isAdminOnly?: boolean;
+}
+
+export default function SignUp({ isAdminOnly = false }: SignUpProps) {
   const navigate = useNavigate();
   const { isLoaded, signUp, setActive } = useSignUp();
   const { getToken, isSignedIn } = useAuth();
@@ -15,6 +19,7 @@ export default function SignUp() {
 
   // Auto-redirect or transition signed-in OAuth users
   useEffect(() => {
+    let cancelled = false;
     const checkUserStatus = async () => {
       if (isSignedIn) {
         try {
@@ -22,7 +27,19 @@ export default function SignUp() {
           if (token) {
             setSessionToken(token);
           }
+          if (cancelled) return;
+
+          if (isAdminOnly) {
+            const syncRes = await AuthService.sync({ role: "ADMIN" });
+            if (!cancelled && syncRes.user?.role === "ADMIN") {
+              localStorage.setItem("mdg_user_role", "ADMIN");
+              navigate("/admin");
+              return;
+            }
+          }
+
           const res = await AuthService.getMe();
+          if (cancelled) return;
           const role = res.user?.role;
           if (role === "CONSULTANT") {
             navigate("/consultant/dashboard");
@@ -33,11 +50,19 @@ export default function SignUp() {
             setPhase("PROFILE");
           }
         } catch (err) {
+          if (cancelled) return;
           console.error("Error checking user status on signup:", err);
           // Sync profile first if it fails due to record not yet existing in Postgres
           try {
-            await AuthService.sync({ role: "CONSULTANT" });
-            setPhase("PROFILE");
+            const targetRole = isAdminOnly ? "ADMIN" : "CONSULTANT";
+            const syncRes = await AuthService.sync({ role: targetRole });
+            if (cancelled) return;
+            if (isAdminOnly && syncRes.user?.role === "ADMIN") {
+              localStorage.setItem("mdg_user_role", "ADMIN");
+              navigate("/admin");
+            } else {
+              setPhase("PROFILE");
+            }
           } catch (syncErr) {
             console.error("First-time OAuth sync failed:", syncErr);
           }
@@ -45,7 +70,10 @@ export default function SignUp() {
       }
     };
     checkUserStatus();
-  }, [isSignedIn, getToken, navigate]);
+    return () => {
+      cancelled = true;
+    };
+  }, [isSignedIn, getToken, navigate, isAdminOnly]);
 
   // Account Form
   const [fullName, setFullName] = useState("");
@@ -143,8 +171,18 @@ export default function SignUp() {
             setSessionToken(token);
           }
 
-          // Move to Profile Details Form
-          setPhase("PROFILE");
+          if (isAdminOnly) {
+            const syncRes = await AuthService.sync({ role: "ADMIN" });
+            if (syncRes.user?.role === "ADMIN") {
+              localStorage.setItem("mdg_user_role", "ADMIN");
+              navigate("/admin");
+            } else {
+              setError("Failed to create admin profile record on the server.");
+            }
+          } else {
+            // Move to Profile Details Form
+            setPhase("PROFILE");
+          }
         }
       } else {
         setError("Verification code is incorrect.");
@@ -233,9 +271,9 @@ export default function SignUp() {
           <div className="auth-logo">
             <img src={logo} alt="MydesignGhar Logo" style={{ width: "100%", height: "100%", objectFit: "contain", padding: "6px" }} />
           </div>
-          <h2>Become a Consultant</h2>
+          <h2>{isAdminOnly ? "Create Admin Account" : "Become a Consultant"}</h2>
           <p>
-            {phase === "ACCOUNT" && "Create your designer account to start."}
+            {phase === "ACCOUNT" && (isAdminOnly ? "Create your administrator account to start." : "Create your designer account to start.")}
             {phase === "VERIFY" && "Verify your email address to continue."}
             {phase === "PROFILE" && "Complete your professional profile application."}
           </p>
@@ -324,10 +362,11 @@ export default function SignUp() {
                 if (!isLoaded) return;
                 try {
                   setLoading(true);
+                  const redirectPath = isAdminOnly ? "/admin/signup" : "/consultant/signup";
                   await signUp.authenticateWithRedirect({
                     strategy: "oauth_google",
-                    redirectUrl: window.location.origin + "/consultant/signup",
-                    redirectUrlComplete: window.location.origin + "/consultant/signup",
+                    redirectUrl: window.location.origin + redirectPath,
+                    redirectUrlComplete: window.location.origin + redirectPath,
                   });
                 } catch (err: any) {
                   setError(err.errors?.[0]?.message || "Failed to initiate Google sign up.");
@@ -345,10 +384,11 @@ export default function SignUp() {
                 if (!isLoaded) return;
                 try {
                   setLoading(true);
+                  const redirectPath = isAdminOnly ? "/admin/signup" : "/consultant/signup";
                   await signUp.authenticateWithRedirect({
                     strategy: "oauth_apple",
-                    redirectUrl: window.location.origin + "/consultant/signup",
-                    redirectUrlComplete: window.location.origin + "/consultant/signup",
+                    redirectUrl: window.location.origin + redirectPath,
+                    redirectUrlComplete: window.location.origin + redirectPath,
                   });
                 } catch (err: any) {
                   setError(err.errors?.[0]?.message || "Failed to initiate Apple sign up.");
@@ -470,7 +510,7 @@ export default function SignUp() {
         <div className="auth-footer">
           {phase === "ACCOUNT" && (
             <p>
-              Already registered? <Link to="/consultant/login">Log in here</Link>
+              Already registered? <Link to={isAdminOnly ? "/admin/login" : "/consultant/login"}>Log in here</Link>
             </p>
           )}
           {phase !== "ACCOUNT" && (

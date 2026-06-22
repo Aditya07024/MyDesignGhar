@@ -265,9 +265,14 @@ export default function Login({ isAdminOnly = false }: LoginProps) {
               New consultant? <Link to="/consultant/signup">Register here</Link>
             </p>
           ) : (
-            <p>
-              <Link to="/">Back to Home Page</Link>
-            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              <p>
+                New admin? <Link to="/admin/signup">Register here</Link>
+              </p>
+              <p>
+                <Link to="/">Back to Home Page</Link>
+              </p>
+            </div>
           )}
         </div>
       </div>

@@ -148,8 +148,9 @@ export default function App() {
 
             {/* Auth Routes */}
             <Route path="/consultant/login" element={<Login isAdminOnly={false} />} />
-            <Route path="/consultant/signup" element={<SignUp />} />
+            <Route path="/consultant/signup" element={<SignUp isAdminOnly={false} />} />
             <Route path="/admin/login" element={<Login isAdminOnly={true} />} />
+            <Route path="/admin/signup" element={<SignUp isAdminOnly={true} />} />
 
             {/* Protected Consultant Portal */}
             <Route
