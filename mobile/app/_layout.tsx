@@ -11,26 +11,40 @@ import { Slot, Stack, useSegments } from "expo-router";
 import { ClerkProvider, useAuth } from "@clerk/clerk-expo";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, SafeAreaView, StatusBar, Platform, ActivityIndicator, Appearance } from "react-native";
+import { View, Text, StyleSheet, StatusBar, Platform, ActivityIndicator, Appearance } from "react-native";
+import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
+import Constants, { ExecutionEnvironment } from "expo-constants";
 import { tokenCache } from "../lib/auth-cache";
-import { setSessionToken } from "../lib/api/client";
+import { setSessionToken, tokenRef } from "../lib/api/client";
 import { useApp } from "../store/app";
 import { COLORS, Button } from "../components/ui-kit";
 import { AuthService } from "../lib/api/services";
 import { Wrench, RefreshCw } from "lucide-react-native";
-import * as Notifications from "expo-notifications";
 import * as SecureStore from "expo-secure-store";
 import { registerForPushNotificationsAsync, registerPushToken } from "../lib/push";
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
-});
+const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+
+let Notifications: any = null;
+if (!isExpoGo) {
+  try {
+    Notifications = require("expo-notifications");
+  } catch (e) {
+    console.warn("expo-notifications failed to load:", e);
+  }
+}
+
+if (Notifications) {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: false,
+      shouldShowBanner: true,
+      shouldShowList: true,
+    }),
+  });
+}
 
 const CLERK_PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY || "";
 
@@ -43,6 +57,11 @@ const queryClient = new QueryClient();
 
 function TokenSync() {
   const { getToken, userId } = useAuth();
+
+  useEffect(() => {
+    tokenRef.getToken = getToken;
+  }, [getToken]);
+
   const hydrateAuth = useApp((s) => s.hydrateAuth);
   const hydrateTheme = useApp((s) => s.hydrateTheme);
   const sessionToken = useApp((s) => s.sessionToken);
@@ -221,51 +240,53 @@ export default function RootLayout() {
   return (
     <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY} tokenCache={tokenCache}>
       <QueryClientProvider client={queryClient}>
-        <TokenSync />
-        <StatusBar barStyle={theme === "dark" ? "light-content" : "dark-content"} />
-        {!hydrated ? (
-          <View style={{ flex: 1, backgroundColor: COLORS.background, justifyContent: "center", alignItems: "center" }}>
-            <ActivityIndicator size="large" color={COLORS.primary} />
-          </View>
-        ) : (
-          <Stack
-            key={`${theme}-${language}`}
-            screenOptions={{
-              headerStyle: {
-                backgroundColor: COLORS.card,
-              },
-              headerTintColor: COLORS.text,
-              headerTitleStyle: {
-                fontWeight: "bold",
-              },
-              headerBackTitle: "",
-              // @ts-ignore
-              headerBackTitleVisible: false,
-              contentStyle: {
-                backgroundColor: COLORS.background,
-              },
-            }}
-          >
-            <Stack.Screen name="index" options={{ headerShown: false, headerBackTitle: "" }} />
-            <Stack.Screen name="(tabs)" options={{ headerShown: false, headerBackTitle: "" }} />
-            <Stack.Screen name="(auth)" options={{ headerShown: false, headerBackTitle: "" }} />
-            <Stack.Screen name="onboarding" options={{ headerShown: false, headerBackTitle: "" }} />
-            <Stack.Screen name="landing" options={{ headerShown: false, headerBackTitle: "" }} />
-            <Stack.Screen name="generate/index" options={{ title: "Generate Design" }} />
-            <Stack.Screen name="generate/result" options={{ title: "AI Redesign Result" }} />
-            <Stack.Screen name="call" options={{ title: "Consultation Call" }} />
-            <Stack.Screen name="notifications" options={{ title: "Notifications" }} />
-            <Stack.Screen name="booking" options={{ title: "Book Consultation" }} />
-            <Stack.Screen name="referral" options={{ title: "Referral Program" }} />
-            <Stack.Screen name="sessions" options={{ title: "Session Details" }} />
-            <Stack.Screen name="settings" options={{ title: "Settings" }} />
-          </Stack>
-        )}
-        {isBackendDown && (
-          <View style={StyleSheet.absoluteFill}>
-            <MaintenanceScreen />
-          </View>
-        )}
+        <SafeAreaProvider>
+          <TokenSync />
+          <StatusBar barStyle={theme === "dark" ? "light-content" : "dark-content"} />
+          {!hydrated ? (
+            <View style={{ flex: 1, backgroundColor: COLORS.background, justifyContent: "center", alignItems: "center" }}>
+              <ActivityIndicator size="large" color={COLORS.primary} />
+            </View>
+          ) : (
+            <Stack
+              key={`${theme}-${language}`}
+              screenOptions={{
+                headerStyle: {
+                  backgroundColor: COLORS.card,
+                },
+                headerTintColor: COLORS.text,
+                headerTitleStyle: {
+                  fontWeight: "bold",
+                },
+                headerBackTitle: "",
+                // @ts-ignore
+                headerBackTitleVisible: false,
+                contentStyle: {
+                  backgroundColor: COLORS.background,
+                },
+              }}
+            >
+              <Stack.Screen name="index" options={{ headerShown: false, headerBackTitle: "" }} />
+              <Stack.Screen name="(tabs)" options={{ headerShown: false, headerBackTitle: "" }} />
+              <Stack.Screen name="(auth)" options={{ headerShown: false, headerBackTitle: "" }} />
+              <Stack.Screen name="onboarding" options={{ headerShown: false, headerBackTitle: "" }} />
+              <Stack.Screen name="landing" options={{ headerShown: false, headerBackTitle: "" }} />
+              <Stack.Screen name="generate/index" options={{ title: "Generate Design" }} />
+              <Stack.Screen name="generate/result" options={{ title: "AI Redesign Result" }} />
+              <Stack.Screen name="call" options={{ title: "Consultation Call" }} />
+              <Stack.Screen name="notifications" options={{ title: "Notifications" }} />
+              <Stack.Screen name="booking" options={{ title: "Book Consultation" }} />
+              <Stack.Screen name="referral" options={{ title: "Referral Program" }} />
+              <Stack.Screen name="sessions" options={{ title: "Session Details" }} />
+              <Stack.Screen name="settings" options={{ title: "Settings" }} />
+            </Stack>
+          )}
+          {isBackendDown && (
+            <View style={StyleSheet.absoluteFill}>
+              <MaintenanceScreen />
+            </View>
+          )}
+        </SafeAreaProvider>
       </QueryClientProvider>
     </ClerkProvider>
   );

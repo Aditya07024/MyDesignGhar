@@ -5,9 +5,9 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  SafeAreaView,
   Platform,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { CheckCircle, CreditCard } from "lucide-react-native";
 import { COLORS, Button, Chip, GlassCard, useStyles, useTranslation } from "../components/ui-kit";
@@ -38,7 +38,7 @@ export default function BookingScreen() {
 
   if (step === "done") {
     return (
-      <SafeAreaView style={styles.doneContainer}>
+      <SafeAreaView style={styles.doneContainer} edges={["bottom", "left", "right"]}>
         <View style={styles.doneContent}>
           <CheckCircle size={80} color={COLORS.success} style={styles.doneIcon} />
           <Text style={styles.doneTitle}>{t("Booking confirmed!")}</Text>
@@ -76,7 +76,7 @@ export default function BookingScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>

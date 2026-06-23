@@ -39,7 +39,7 @@ export default function DesignDetailScreen() {
         room: realDesign.roomType,
         beforeSeed: realDesign.beforeUrl || "",
         afterSeed: firstImage ? firstImage.previewUrl : "",
-        purchased: realDesign.purchased || realDesign.isOwner,
+        purchased: firstImage ? firstImage.purchased : false,
       };
     }
     return designs.find((x) => x.id === id);

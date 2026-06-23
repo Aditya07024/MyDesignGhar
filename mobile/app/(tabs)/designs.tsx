@@ -7,10 +7,10 @@ import {
   TouchableOpacity,
   ScrollView,
   Image,
-  SafeAreaView,
   FlatList,
   ActivityIndicator,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Search, Plus, ImageOff } from "lucide-react-native";
 import { COLORS, Button, Chip, EmptyState, useStyles, useTranslation } from "../../components/ui-kit";
@@ -74,7 +74,7 @@ export default function DesignsScreen() {
   }, [filter, q, favorites, displayList]);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>{t("My Designs")}</Text>
         <Button
@@ -225,7 +225,7 @@ const getStyles = (theme: "light" | "dark") => StyleSheet.create({
   },
   gridContainer: {
     paddingHorizontal: 14,
-    paddingBottom: 24,
+    paddingBottom: 100,
   },
   gridRow: {
     justifyContent: "space-between",

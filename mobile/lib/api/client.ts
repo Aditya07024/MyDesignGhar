@@ -36,13 +36,28 @@ export const apiClient = axios.create({
 
 import { useApp } from "../../store/app";
 
+export const tokenRef = {
+  getToken: null as (() => Promise<string | null>) | null,
+};
+
 export const setSessionToken = (token: string | null) => {
   useApp.getState().setSessionToken(token);
 };
 
 apiClient.interceptors.request.use(
-  (config) => {
-    const token = useApp.getState().sessionToken;
+  async (config) => {
+    let token = useApp.getState().sessionToken;
+    if (tokenRef.getToken) {
+      try {
+        const freshToken = await tokenRef.getToken();
+        if (freshToken) {
+          token = freshToken;
+          useApp.getState().setSessionToken(token);
+        }
+      } catch (err) {
+        console.warn("Failed to refresh Clerk token in interceptor:", err);
+      }
+    }
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }

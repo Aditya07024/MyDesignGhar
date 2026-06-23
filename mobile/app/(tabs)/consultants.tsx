@@ -5,10 +5,10 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  SafeAreaView,
   FlatList,
   ActivityIndicator,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { SlidersHorizontal, Briefcase } from "lucide-react-native";
 import { COLORS, Avatar, Chip, StarRating, useStyles, useTranslation } from "../../components/ui-kit";
@@ -43,7 +43,7 @@ export default function ConsultantsScreen() {
   }, [realConsultants]);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
       {/* Top Header Row */}
       <View style={styles.header}>
         <View style={styles.headerText}>
@@ -168,7 +168,7 @@ const getStyles = (theme: "light" | "dark") => StyleSheet.create({
   },
   listContent: {
     paddingHorizontal: 20,
-    paddingBottom: 24,
+    paddingBottom: 100,
     gap: 12,
   },
   card: {

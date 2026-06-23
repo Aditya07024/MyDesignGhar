@@ -1,11 +1,21 @@
-import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
-import Constants from "expo-constants";
+import Constants, { ExecutionEnvironment } from "expo-constants";
 import { Platform } from "react-native";
 import { AuthService } from "./api/services";
 
+const isExpoGo = Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+
+let Notifications: any = null;
+if (!isExpoGo) {
+  try {
+    Notifications = require("expo-notifications");
+  } catch (e) {
+    console.warn("expo-notifications failed to load:", e);
+  }
+}
+
 export async function registerForPushNotificationsAsync(): Promise<string | null> {
-  if (Platform.OS === "web") {
+  if (Platform.OS === "web" || isExpoGo || !Notifications) {
     return null;
   }
 

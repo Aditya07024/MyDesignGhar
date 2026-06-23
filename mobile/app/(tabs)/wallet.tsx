@@ -5,11 +5,13 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  SafeAreaView,
   Alert,
   ActivityIndicator,
   TextInput,
+  Modal,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { WebView } from "react-native-webview";
 import { useRouter } from "expo-router";
 import { Plus, ArrowUpRight, ArrowDownLeft, Gift } from "lucide-react-native";
 import { COLORS, Button, GlassCard, SectionTitle, useStyles, useTranslation } from "../../components/ui-kit";
@@ -28,10 +30,53 @@ export default function WalletScreen() {
   const verifyTopUpMutation = useWalletVerifyTopUpMutation();
   const [rechargeAmount, setRechargeAmount] = useState("");
 
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentHtml, setPaymentHtml] = useState("");
+  const [pendingAmount, setPendingAmount] = useState<number>(0);
+
+  const handleWebViewMessage = async (event: any) => {
+    try {
+      const response = JSON.parse(event.nativeEvent.data);
+      setShowPaymentModal(false);
+
+      if (response.status === "success") {
+        const { razorpay_payment_id, razorpay_signature, razorpay_order_id } = response.data;
+        // Verify payment on backend
+        await verifyTopUpMutation.mutateAsync({
+          orderId: razorpay_order_id,
+          paymentId: razorpay_payment_id,
+          signature: razorpay_signature,
+          amount: pendingAmount,
+        });
+        refetchBalance();
+        refetchHistory();
+        Alert.alert("Success", `₹${pendingAmount} has been successfully credited to your wallet via Razorpay!`);
+      } else if (response.status === "failed") {
+        Alert.alert("Payment Failed", response.error?.description || "Payment failed or was declined.");
+      } else if (response.status === "cancelled") {
+        Alert.alert("Payment Cancelled", "You cancelled the payment transaction.");
+      }
+    } catch (err: any) {
+      console.error("Payment handle error:", err);
+      Alert.alert("Error", "Could not complete payment verification.");
+    }
+  };
+
   const handleAddMoney = async (amount: number) => {
-    if (Platform.OS === "web") {
-      // Real Razorpay Checkout flow
-      try {
+    try {
+      // 1. Create order on backend (mock: false)
+      const orderData = await topUpMutation.mutateAsync({ amount, mock: false });
+      
+      // Check if it was a mock top-up (backend returned wallet balance directly because of placeholder keys)
+      if (orderData.wallet) {
+        refetchBalance();
+        refetchHistory();
+        Alert.alert("Mock Recharge", `₹${amount} has been successfully credited to your mock wallet balance!`);
+        return;
+      }
+
+      if (Platform.OS === "web") {
+        // Real Razorpay Checkout flow
         // 1. Load Razorpay script dynamically
         const isLoaded = await new Promise<boolean>((resolve) => {
           if ((window as any).Razorpay) {
@@ -50,12 +95,9 @@ export default function WalletScreen() {
           return;
         }
 
-        // 2. Create order on backend (mock: false)
-        const orderData = await topUpMutation.mutateAsync({ amount, mock: false });
-        
-        // 3. Open Razorpay checkout form
+        // Open Razorpay checkout form on Web
         const options = {
-          key: process.env.EXPO_PUBLIC_RAZORPAY_KEY_ID || "rzp_live_SrZjx0jgQ3fnmi", // User key
+          key: process.env.EXPO_PUBLIC_RAZORPAY_KEY_ID || "rzp_live_SrZjx0jgQ3fnmi",
           amount: orderData.amount,
           currency: orderData.currency,
           name: "MyDezineGhar",
@@ -63,7 +105,7 @@ export default function WalletScreen() {
           order_id: orderData.orderId,
           handler: async function (response: any) {
             try {
-              // 4. Verify payment on backend
+              // Verify payment on backend
               await verifyTopUpMutation.mutateAsync({
                 orderId: orderData.orderId,
                 paymentId: response.razorpay_payment_id,
@@ -78,9 +120,9 @@ export default function WalletScreen() {
             }
           },
           prefill: {
-            name: "",
-            email: "",
-            contact: "",
+            name: user?.fullName || "",
+            email: user?.email || "",
+            contact: user?.phone || "",
           },
           theme: {
             color: "#8CC0EB",
@@ -89,21 +131,105 @@ export default function WalletScreen() {
 
         const rzp = new (window as any).Razorpay(options);
         rzp.open();
-      } catch (err: any) {
-        alert(err.response?.data?.message || "Failed to initiate Razorpay recharge.");
+        return;
       }
-      return;
-    }
 
-    // Native platforms (iOS/Android fallback) - direct them to Web for Razorpay
-    Alert.alert("Razorpay Checkout", "Please use our web portal to securely complete Razorpay wallet recharges.");
+      // Native Razorpay Checkout flow (using WebView)
+      setPendingAmount(amount);
+      const apiKey = process.env.EXPO_PUBLIC_RAZORPAY_KEY_ID || "rzp_live_SrZjx0jgQ3fnmi";
+      
+      const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+          <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+          <style>
+            body {
+              background-color: #12141a;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              height: 100vh;
+              margin: 0;
+              font-family: sans-serif;
+              color: #ffffff;
+            }
+            .loader {
+              text-align: center;
+              padding: 20px;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="loader">
+            <h3>Connecting to Razorpay...</h3>
+            <p>Please complete your payment in the checkout window.</p>
+          </div>
+          <script>
+            var options = {
+              "key": "${apiKey}",
+              "amount": ${orderData.amount},
+              "currency": "${orderData.currency}",
+              "name": "MyDezineGhar",
+              "description": "Wallet Top-Up",
+              "order_id": "${orderData.orderId}",
+              "handler": function (response) {
+                window.ReactNativeWebView.postMessage(JSON.stringify({
+                  status: 'success',
+                  data: {
+                    razorpay_payment_id: response.razorpay_payment_id,
+                    razorpay_signature: response.razorpay_signature,
+                    razorpay_order_id: response.razorpay_order_id || '${orderData.orderId}'
+                  }
+                }));
+              },
+              "prefill": {
+                "name": "${user?.fullName || ''}",
+                "email": "${user?.email || ''}",
+                "contact": "${user?.phone || ''}"
+              },
+              "theme": {
+                "color": "#8CC0EB"
+              },
+              "modal": {
+                "ondismiss": function() {
+                  window.ReactNativeWebView.postMessage(JSON.stringify({
+                    status: 'cancelled'
+                  }));
+                }
+              }
+            };
+            var rzp = new Razorpay(options);
+            rzp.on('payment.failed', function (response){
+              window.ReactNativeWebView.postMessage(JSON.stringify({
+                status: 'failed',
+                error: response.error
+              }));
+            });
+            rzp.open();
+          </script>
+        </body>
+        </html>
+      `;
+      
+      setPaymentHtml(html);
+      setShowPaymentModal(true);
+    } catch (err: any) {
+      const errorMsg = err.response?.data?.message || "Failed to initiate Razorpay recharge.";
+      if (Platform.OS === "web") {
+        alert(errorMsg);
+      } else {
+        Alert.alert("Recharge Failed", errorMsg);
+      }
+    }
   };
 
   const user = useApp((s) => s.user);
   const isConsultant = user?.role === "CONSULTANT";
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["top", "left", "right"]}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <Text style={styles.title}>{isConsultant ? t("Earnings") : t("Wallet")}</Text>
 
@@ -245,6 +371,39 @@ export default function WalletScreen() {
           </View>
         )}
       </ScrollView>
+
+      {/* Razorpay WebView Modal */}
+      <Modal
+        visible={showPaymentModal}
+        animationType="slide"
+        onRequestClose={() => setShowPaymentModal(false)}
+      >
+        <SafeAreaView style={{ flex: 1, backgroundColor: COLORS.background }} edges={["top", "bottom", "left", "right"]}>
+          <View style={{
+            height: 56,
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            paddingHorizontal: 20,
+            borderBottomWidth: 1,
+            borderBottomColor: COLORS.border,
+            backgroundColor: COLORS.card
+          }}>
+            <Text style={{ fontSize: 16, fontWeight: "800", color: COLORS.text }}>Razorpay Payment</Text>
+            <TouchableOpacity onPress={() => setShowPaymentModal(false)}>
+              <Text style={{ color: COLORS.destructive, fontWeight: "700" }}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+          <WebView
+            source={{ html: paymentHtml }}
+            onMessage={handleWebViewMessage}
+            style={{ flex: 1 }}
+            javaScriptEnabled
+            domStorageEnabled
+            originWhitelist={["*"]}
+          />
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -256,7 +415,7 @@ const getStyles = (theme: "light" | "dark") => StyleSheet.create({
   },
   scrollContent: {
     padding: 20,
-    paddingBottom: 40,
+    paddingBottom: 100,
   },
   title: {
     fontSize: 24,

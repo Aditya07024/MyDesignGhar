@@ -360,10 +360,9 @@ export class DesignController {
         },
       });
 
-      const isOwner = designImage.design.userId === userId;
       const isAdmin = req.user!.role === "ADMIN" || req.user!.role === "SUPER_ADMIN";
 
-      if (!purchase && !isOwner && !isAdmin) {
+      if (!purchase && !isAdmin) {
         return res.status(403).json({ message: "Purchase required to download high-resolution original" });
       }
 

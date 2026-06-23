@@ -4,10 +4,10 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  SafeAreaView,
   ActivityIndicator,
   TouchableOpacity,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Sparkles, CheckCircle, Calendar, Gift } from "lucide-react-native";
 import { COLORS, EmptyState, useStyles, useTranslation } from "../components/ui-kit";
 import { useApp } from "../store/app";
@@ -48,7 +48,7 @@ export default function NotificationsScreen() {
   }, [realNotifications]);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>

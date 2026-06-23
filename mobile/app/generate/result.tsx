@@ -5,11 +5,11 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  SafeAreaView,
   Share,
   Alert,
   ActivityIndicator,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Heart, Share2, Bookmark, Download, RefreshCw, Users, Sparkles, CheckCircle2, Circle } from "lucide-react-native";
 import { COLORS, Button, GlassCard, BeforeAfter, useStyles, useTranslation } from "../../components/ui-kit";
@@ -42,7 +42,7 @@ export default function ResultScreen() {
         room: realDesign.roomType,
         beforeSeed: realDesign.beforeUrl || (params.imageUri as string) || "",
         afterSeed: img.previewUrl as string,
-        purchased: img.purchased || realDesign.isOwner || false,
+        purchased: img.purchased || false,
       }));
     }
 
@@ -170,7 +170,7 @@ export default function ResultScreen() {
 
   if (designId && isLoading) {
     return (
-      <SafeAreaView style={[styles.container, { justifyContent: "center", alignItems: "center" }]}>
+      <SafeAreaView style={[styles.container, { justifyContent: "center", alignItems: "center" }]} edges={["bottom", "left", "right"]}>
         <ActivityIndicator size="large" color={COLORS.primary} />
         <Text style={{ color: COLORS.textMuted, marginTop: 12 }}>{t("Loading your designs...")}</Text>
       </SafeAreaView>
@@ -178,7 +178,7 @@ export default function ResultScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Header */}
         <View style={styles.header}>
@@ -278,14 +278,25 @@ export default function ResultScreen() {
                   </View>
                 </View>
 
-                <Button
-                  title={d.purchased ? t("Download High-Res") : t("Download HD · ₹299")}
-                  full
-                  variant={d.purchased ? "success" : "primary"}
-                  icon={<Download size={16} color={d.purchased ? "#ffffff" : "#12141a"} />}
-                  onPress={() => d.purchased ? handleDownloadPurchased(d.id) : handlePurchaseSingle(d.id)}
-                  style={styles.downloadBtn}
-                />
+                {!d.purchased ? (
+                  <Button
+                    title={selectedImages.has(d.id) ? t("Selected") : t("Select to Buy")}
+                    full
+                    variant={selectedImages.has(d.id) ? "secondary" : "outline"}
+                    icon={selectedImages.has(d.id) ? <CheckCircle2 size={16} color={COLORS.text} /> : <Circle size={16} color={COLORS.textMuted} />}
+                    onPress={() => toggleSelection(d.id)}
+                    style={styles.downloadBtn}
+                  />
+                ) : (
+                  <Button
+                    title={t("Download High-Res")}
+                    full
+                    variant="success"
+                    icon={<Download size={16} color="#ffffff" />}
+                    onPress={() => handleDownloadPurchased(d.id)}
+                    style={styles.downloadBtn}
+                  />
+                )}
               </GlassCard>
             );
           })}
@@ -458,7 +469,8 @@ const getStyles = (theme: "light" | "dark") => StyleSheet.create({
     borderTopColor: COLORS.border,
     borderTopWidth: 1,
     paddingHorizontal: 20,
-    paddingVertical: 14,
+    paddingTop: 14,
+    paddingBottom: 34,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",

@@ -4,12 +4,12 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  SafeAreaView,
   Share,
   Linking,
   Alert,
   Clipboard,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { Gift, Copy, Share2 } from "lucide-react-native";
 import { COLORS, Button, GlassCard, useStyles, useTranslation } from "../components/ui-kit";
 import { useApp } from "../store/app";
@@ -56,7 +56,7 @@ export default function ReferralScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
       <View style={styles.scrollContent}>
         {/* Header */}
         <View style={styles.header}>
