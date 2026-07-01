@@ -51,6 +51,7 @@ const CLERK_PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY || "
 const isClerkKeyValid =
   CLERK_PUBLISHABLE_KEY.length > 0 &&
   !CLERK_PUBLISHABLE_KEY.includes("placeholder") &&
+  !CLERK_PUBLISHABLE_KEY.includes("...") &&
   (CLERK_PUBLISHABLE_KEY.startsWith("pk_test_") || CLERK_PUBLISHABLE_KEY.startsWith("pk_live_"));
 
 const queryClient = new QueryClient();
@@ -202,6 +203,15 @@ export default function RootLayout() {
           </Text>
           
           <View style={styles.instructionsCard}>
+            <Text style={[styles.stepTitle, { color: COLORS.destructive, marginBottom: 8 }]}>Debug Info (Current Resolution):</Text>
+            <Text style={[styles.stepText, { fontFamily: Platform.OS === 'ios' ? 'Courier' : 'monospace', fontSize: 11, backgroundColor: COLORS.background, padding: 8, borderRadius: 6, marginBottom: 16, lineHeight: 16 }]}>
+              Key: "{CLERK_PUBLISHABLE_KEY || "undefined/empty"}"{"\n"}
+              Valid Format: {String(CLERK_PUBLISHABLE_KEY.startsWith("pk_test_") || CLERK_PUBLISHABLE_KEY.startsWith("pk_live_"))}{"\n"}
+              Has Placeholder: {String(CLERK_PUBLISHABLE_KEY.includes("placeholder"))}{"\n"}
+              Has Dots: {String(CLERK_PUBLISHABLE_KEY.includes("..."))}{"\n"}
+              Environment: {Constants.executionEnvironment}
+            </Text>
+
             <Text style={styles.stepTitle}>1. Get your Publishable Key</Text>
             <Text style={styles.stepText}>
               Find it in the Clerk Dashboard under "API Keys".

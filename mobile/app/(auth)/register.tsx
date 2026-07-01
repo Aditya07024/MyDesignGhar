@@ -35,11 +35,42 @@ export default function RegisterScreen() {
   const syncMutation = useSyncMutation();
   const { isLoaded, signUp, setActive } = useSignUp();
   
+  const [autoSyncAttempted, setAutoSyncAttempted] = useState(false);
+
   useEffect(() => {
-    if (isAuthLoaded && isSignedIn && isAuthed) {
-      router.replace("/(tabs)/home");
+    if (isAuthLoaded && isSignedIn) {
+      if (isAuthed) {
+        router.replace("/(tabs)/home");
+      } else if (!autoSyncAttempted && !loading && !googleLoading && !appleLoading) {
+        setAutoSyncAttempted(true);
+        setLoading(true);
+        getToken()
+          .then((token) => {
+            if (token) {
+              setSessionToken(token);
+            }
+            syncMutation.mutate(
+              { referralCode: form.referralCode || undefined, role: roleType },
+              {
+                onSuccess: (data) => {
+                  login(token || undefined, data.user);
+                  setLoading(false);
+                  router.replace("/(tabs)/home");
+                },
+                onError: (syncErr: any) => {
+                  setErr(syncErr.response?.data?.message || "Sync with backend server failed.");
+                  setLoading(false);
+                },
+              }
+            );
+          })
+          .catch((error) => {
+            setErr(error.message || "Failed to retrieve session token.");
+            setLoading(false);
+          });
+      }
     }
-  }, [isAuthLoaded, isSignedIn, isAuthed]);
+  }, [isAuthLoaded, isSignedIn, isAuthed, autoSyncAttempted]);
 
   const { startOAuthFlow: startGoogleFlow } = useOAuth({ strategy: "oauth_google" });
   const { startOAuthFlow: startAppleFlow } = useOAuth({ strategy: "oauth_apple" });
@@ -71,6 +102,31 @@ export default function RegisterScreen() {
   const handleGoogleSignIn = async () => {
     setErr("");
     setGoogleLoading(true);
+
+    if (isSignedIn) {
+      try {
+        const token = await getToken();
+        if (token) {
+          setSessionToken(token);
+        }
+        syncMutation.mutate({ referralCode: form.referralCode || undefined, role: roleType }, {
+          onSuccess: (data) => {
+            login(token || undefined, data.user);
+            setGoogleLoading(false);
+            router.replace("/(tabs)/home");
+          },
+          onError: (syncErr: any) => {
+            setErr(syncErr.response?.data?.message || "Sync with backend server failed.");
+            setGoogleLoading(false);
+          },
+        });
+      } catch (error: any) {
+        setErr(error.message || "Failed to retrieve session token.");
+        setGoogleLoading(false);
+      }
+      return;
+    }
+
     try {
       const { createdSessionId, setActive: setOAuthActive } = await startGoogleFlow({
         redirectUrl: Linking.createURL("/(tabs)/home", { scheme: "mydesignghar" }),
@@ -97,6 +153,29 @@ export default function RegisterScreen() {
         setGoogleLoading(false);
       }
     } catch (error: any) {
+      const errMsg = error.message || "";
+      if (errMsg.toLowerCase().includes("already") || errMsg.toLowerCase().includes("signed in") || errMsg.toLowerCase().includes("sign in")) {
+        try {
+          const token = await getToken();
+          if (token) {
+            setSessionToken(token);
+          }
+          syncMutation.mutate({ referralCode: form.referralCode || undefined, role: roleType }, {
+            onSuccess: (data) => {
+              login(token || undefined, data.user);
+              setGoogleLoading(false);
+              router.replace("/(tabs)/home");
+            },
+            onError: (syncErr: any) => {
+              setErr(syncErr.response?.data?.message || "Sync with backend server failed.");
+              setGoogleLoading(false);
+            },
+          });
+          return;
+        } catch (tokenErr) {
+          // Fall through to original error
+        }
+      }
       setErr(error.message || "Failed to sign up with Google.");
       setGoogleLoading(false);
     }
@@ -105,6 +184,31 @@ export default function RegisterScreen() {
   const handleAppleSignIn = async () => {
     setErr("");
     setAppleLoading(true);
+
+    if (isSignedIn) {
+      try {
+        const token = await getToken();
+        if (token) {
+          setSessionToken(token);
+        }
+        syncMutation.mutate({ referralCode: form.referralCode || undefined, role: roleType }, {
+          onSuccess: (data) => {
+            login(token || undefined, data.user);
+            setAppleLoading(false);
+            router.replace("/(tabs)/home");
+          },
+          onError: (syncErr: any) => {
+            setErr(syncErr.response?.data?.message || "Sync with backend server failed.");
+            setAppleLoading(false);
+          },
+        });
+      } catch (error: any) {
+        setErr(error.message || "Failed to retrieve session token.");
+        setAppleLoading(false);
+      }
+      return;
+    }
+
     try {
       const { createdSessionId, setActive: setOAuthActive } = await startAppleFlow({
         redirectUrl: Linking.createURL("/(tabs)/home", { scheme: "mydesignghar" }),
@@ -131,6 +235,29 @@ export default function RegisterScreen() {
         setAppleLoading(false);
       }
     } catch (error: any) {
+      const errMsg = error.message || "";
+      if (errMsg.toLowerCase().includes("already") || errMsg.toLowerCase().includes("signed in") || errMsg.toLowerCase().includes("sign in")) {
+        try {
+          const token = await getToken();
+          if (token) {
+            setSessionToken(token);
+          }
+          syncMutation.mutate({ referralCode: form.referralCode || undefined, role: roleType }, {
+            onSuccess: (data) => {
+              login(token || undefined, data.user);
+              setAppleLoading(false);
+              router.replace("/(tabs)/home");
+            },
+            onError: (syncErr: any) => {
+              setErr(syncErr.response?.data?.message || "Sync with backend server failed.");
+              setAppleLoading(false);
+            },
+          });
+          return;
+        } catch (tokenErr) {
+          // Fall through to original error
+        }
+      }
       setErr(error.message || "Failed to sign up with Apple.");
       setAppleLoading(false);
     }

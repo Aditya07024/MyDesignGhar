@@ -6,9 +6,16 @@
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "scheme": "mydesignghar",
+    "icon": "./assets/logo.png",
+    "splash": {
+      "image": "./assets/logo.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#FFFFFF"
+    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.mydesignghar.app",
+      "icon": "./assets/logo.png",
       "infoPlist": {
         "NSMicrophoneUsageDescription": "MyDesignGhar needs access to your microphone to transcribe your speech design vision."
       }
@@ -17,7 +24,11 @@
       "package": "com.mydesignghar.app",
       "permissions": [
         "android.permission.RECORD_AUDIO"
-      ]
+      ],
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/logo.png",
+        "backgroundColor": "#FFFFFF"
+      }
     },
     "plugins": [
       "expo-router",
