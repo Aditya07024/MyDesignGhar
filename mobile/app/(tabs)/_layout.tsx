@@ -5,6 +5,7 @@ import { Home, LayoutGrid, Users, Wallet } from "lucide-react-native";
 import { COLORS, useTranslation } from "../../components/ui-kit";
 import { ActivityIndicator, View, Platform } from "react-native";
 import { useApp } from "../../store/app";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function TabsLayout() {
   const { isLoaded, isSignedIn } = useAuth();
@@ -13,6 +14,7 @@ export default function TabsLayout() {
   const router = useRouter();
   const theme = useApp((s) => s.theme);
   const t = useTranslation();
+  const insets = useSafeAreaInsets();
 
   useEffect(() => {
     if (isLoaded && (!isSignedIn || !isAuthed)) {
@@ -44,8 +46,8 @@ export default function TabsLayout() {
           backgroundColor: COLORS.card,
           borderTopColor: COLORS.border,
           borderTopWidth: 1,
-          height: Platform.OS === "ios" ? 90 : 70,
-          paddingBottom: Platform.OS === "ios" ? 24 : 10,
+          height: Platform.OS === "ios" ? (insets.bottom > 0 ? 88 : 68) : (insets.bottom > 0 ? 76 : 64),
+          paddingBottom: insets.bottom > 0 ? insets.bottom - 4 : 8,
           paddingTop: 8,
         },
         headerStyle: {
