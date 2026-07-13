@@ -7,11 +7,11 @@ if (typeof global.DOMException === "undefined") {
   } as any;
 }
 
-import { Slot, Stack, useSegments } from "expo-router";
+import { Slot, Stack, useSegments, useRouter } from "expo-router";
 import { ClerkProvider, useAuth } from "@clerk/clerk-expo";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, StatusBar, Platform, ActivityIndicator, Appearance } from "react-native";
+import { View, Text, StyleSheet, StatusBar, Platform, ActivityIndicator, Appearance, TouchableOpacity } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import Constants, { ExecutionEnvironment } from "expo-constants";
 import { tokenCache } from "../lib/auth-cache";
@@ -19,7 +19,7 @@ import { setSessionToken, tokenRef } from "../lib/api/client";
 import { useApp } from "../store/app";
 import { COLORS, Button } from "../components/ui-kit";
 import { AuthService } from "../lib/api/services";
-import { Wrench, RefreshCw } from "lucide-react-native";
+import { Wrench, RefreshCw, ChevronLeft } from "lucide-react-native";
 import * as SecureStore from "expo-secure-store";
 import { registerForPushNotificationsAsync, registerPushToken } from "../lib/push";
 
@@ -240,6 +240,7 @@ export default function RootLayout() {
   const language = useApp((s) => s.language);
   const hydrated = useApp((s) => s.hydrated);
   const isBackendDown = useApp((s) => s.isBackendDown);
+  const router = useRouter();
 
   useEffect(() => {
     if (hydrated) {
@@ -268,19 +269,36 @@ export default function RootLayout() {
                 headerTitleStyle: {
                   fontWeight: "bold",
                 },
-                headerBackTitle: "",
+                headerBackTitle: " ",
                 // @ts-ignore
                 headerBackTitleVisible: false,
+                headerLeft: ({ canGoBack }) => {
+                  if (!canGoBack) return null;
+                  return (
+                    <TouchableOpacity
+                      onPress={() => router.back()}
+                      style={{
+                        marginLeft: Platform.OS === 'ios' ? -8 : 0,
+                        padding: 8,
+                        justifyContent: "center",
+                        alignItems: "center"
+                      }}
+                      activeOpacity={0.7}
+                    >
+                      <ChevronLeft size={24} color={COLORS.text} />
+                    </TouchableOpacity>
+                  );
+                },
                 contentStyle: {
                   backgroundColor: COLORS.background,
                 },
               }}
             >
-              <Stack.Screen name="index" options={{ headerShown: false, headerBackTitle: "" }} />
-              <Stack.Screen name="(tabs)" options={{ headerShown: false, headerBackTitle: "" }} />
-              <Stack.Screen name="(auth)" options={{ headerShown: false, headerBackTitle: "" }} />
-              <Stack.Screen name="onboarding" options={{ headerShown: false, headerBackTitle: "" }} />
-              <Stack.Screen name="landing" options={{ headerShown: false, headerBackTitle: "" }} />
+              <Stack.Screen name="index" options={{ headerShown: false }} />
+              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+              <Stack.Screen name="onboarding" options={{ headerShown: false }} />
+              <Stack.Screen name="landing" options={{ headerShown: false }} />
               <Stack.Screen name="generate/index" options={{ title: "Generate Design" }} />
               <Stack.Screen name="generate/result" options={{ title: "AI Redesign Result" }} />
               <Stack.Screen name="call" options={{ title: "Consultation Call" }} />

@@ -421,6 +421,37 @@ export class DesignController {
   }
 
   /**
+   * Delete design (Soft delete)
+   */
+  static async delete(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const userId = req.user!.id;
+
+      const design = await prisma.design.findUnique({
+        where: { id },
+      });
+
+      if (!design || design.deletedAt) {
+        return res.status(404).json({ message: "Design not found" });
+      }
+
+      if (design.userId !== userId && req.user!.role !== "ADMIN" && req.user!.role !== "SUPER_ADMIN") {
+        return res.status(403).json({ message: "You can only delete your own designs" });
+      }
+
+      await prisma.design.update({
+        where: { id },
+        data: { deletedAt: new Date() },
+      });
+
+      return res.json({ success: true, message: "Design deleted successfully" });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
    * Submit to daily challenges
    */
   static async submitChallenge(req: AuthenticatedRequest, res: Response, next: NextFunction) {

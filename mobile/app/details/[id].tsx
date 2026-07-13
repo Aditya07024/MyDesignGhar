@@ -6,16 +6,16 @@ import {
   ScrollView,
   Image,
   TouchableOpacity,
-  SafeAreaView,
   Share,
   Alert,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { Download, Share2, Trash2, RefreshCw, Heart } from "lucide-react-native";
 import { COLORS, Button, EmptyState, BeforeAfter, img, useStyles } from "../../components/ui-kit";
 import { useApp } from "../../store/app";
 import { designs } from "../../src/lib/mock";
-import { useDesignDetailsQuery, usePurchaseImagesMutation, useWalletBalanceQuery } from "../../hooks/useApi";
+import { useDesignDetailsQuery, usePurchaseImagesMutation, useWalletBalanceQuery, useDeleteDesignMutation } from "../../hooks/useApi";
 import { DesignService } from "../../lib/api/services";
 import { ActivityIndicator, Platform } from "react-native";
 
@@ -27,6 +27,7 @@ export default function DesignDetailScreen() {
 
   const { data: realDesign, isLoading } = useDesignDetailsQuery(id as string);
   const purchaseMutation = usePurchaseImagesMutation();
+  const deleteMutation = useDeleteDesignMutation();
   const { data: walletBalance = 0 } = useWalletBalanceQuery();
 
   const d = React.useMemo(() => {
@@ -47,7 +48,7 @@ export default function DesignDetailScreen() {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={[styles.container, { justifyContent: "center", alignItems: "center" }]}>
+      <SafeAreaView style={[styles.container, { justifyContent: "center", alignItems: "center" }]} edges={["bottom", "left", "right"]}>
         <ActivityIndicator size="large" color={COLORS.primary} />
       </SafeAreaView>
     );
@@ -55,7 +56,7 @@ export default function DesignDetailScreen() {
 
   if (!d) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
         <EmptyState
           icon={<RefreshCw size={32} color={COLORS.primary} />}
           title="Design not found"
@@ -164,7 +165,7 @@ export default function DesignDetailScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={["bottom", "left", "right"]}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Page Header */}
         <View style={styles.header}>
@@ -221,14 +222,14 @@ export default function DesignDetailScreen() {
           <Button
             title="Share Design"
             variant="outline"
-            icon={<Share2 size={16} color="#ffffff" />}
+            icon={<Share2 size={16} color={COLORS.text} />}
             onPress={handleShare}
             style={styles.actionBtn}
           />
           <Button
             title="Regenerate"
             variant="outline"
-            icon={<RefreshCw size={16} color="#ffffff" />}
+            icon={<RefreshCw size={16} color={COLORS.text} />}
             onPress={() => router.push("/generate")}
             style={styles.actionBtn}
           />
@@ -242,7 +243,14 @@ export default function DesignDetailScreen() {
                 {
                   text: "Delete",
                   style: "destructive",
-                  onPress: () => router.back(),
+                  onPress: async () => {
+                    try {
+                      await deleteMutation.mutateAsync(d.id);
+                      router.back();
+                    } catch (err: any) {
+                      Alert.alert("Error", err.response?.data?.message || "Failed to delete design.");
+                    }
+                  },
                 },
               ]);
             }}

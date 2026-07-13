@@ -4839,7 +4839,21 @@ export function GlassCard({
   children: React.ReactNode;
   style?: ViewStyle;
 }) {
-  return <View style={[styles.glassCard, style]}>{children}</View>;
+  const theme = useApp((s) => s.theme);
+  return (
+    <View
+      style={[
+        styles.glassCard,
+        {
+          backgroundColor: COLORS.card,
+          borderColor: COLORS.border,
+        },
+        style,
+      ]}
+    >
+      {children}
+    </View>
+  );
 }
 
 // --- CHIP ---
@@ -4852,6 +4866,7 @@ export function Chip({
   onPress?: () => void;
   children: React.ReactNode;
 }) {
+  const theme = useApp((s) => s.theme);
   return (
     <TouchableOpacity
       onPress={onPress}
@@ -4878,6 +4893,7 @@ export function Chip({
 
 // --- AVATAR ---
 export function Avatar({ seed, size = 40 }: { seed: string; size?: number }) {
+  const theme = useApp((s) => s.theme);
   return (
     <Image
       source={{ uri: img(`avatar-${seed}`, size * 2, size * 2) }}
@@ -4894,7 +4910,8 @@ export function Avatar({ seed, size = 40 }: { seed: string; size?: number }) {
 
 // --- SKELETON ---
 export function Skeleton({ style }: { style?: ViewStyle }) {
-  return <View style={[styles.skeleton, style]} />;
+  const theme = useApp((s) => s.theme);
+  return <View style={[styles.skeleton, { backgroundColor: COLORS.card }, style]} />;
 }
 
 // --- EMPTY STATE ---
@@ -4909,11 +4926,12 @@ export function EmptyState({
   body: string;
   action?: React.ReactNode;
 }) {
+  const theme = useApp((s) => s.theme);
   return (
     <View style={styles.emptyState}>
-      <View style={styles.emptyIconContainer}>{icon}</View>
-      <Text style={styles.emptyTitle}>{title}</Text>
-      <Text style={styles.emptyBody}>{body}</Text>
+      <View style={[styles.emptyIconContainer, { backgroundColor: COLORS.card }]}>{icon}</View>
+      <Text style={[styles.emptyTitle, { color: COLORS.text }]}>{title}</Text>
+      <Text style={[styles.emptyBody, { color: COLORS.textMuted }]}>{body}</Text>
       {action && <View style={styles.emptyAction}>{action}</View>}
     </View>
   );
@@ -4921,10 +4939,11 @@ export function EmptyState({
 
 // --- STAR RATING ---
 export function StarRating({ value }: { value: number }) {
+  const theme = useApp((s) => s.theme);
   return (
     <View style={styles.ratingContainer}>
-      <Text style={styles.starText}>★</Text>
-      <Text style={styles.ratingVal}>{value.toFixed(1)}</Text>
+      <Text style={[styles.starText, { color: COLORS.accent }]}>★</Text>
+      <Text style={[styles.ratingVal, { color: COLORS.text }]}>{value.toFixed(1)}</Text>
     </View>
   );
 }
@@ -4937,9 +4956,10 @@ export function SectionTitle({
   children: string;
   action?: React.ReactNode;
 }) {
+  const theme = useApp((s) => s.theme);
   return (
     <View style={styles.sectionHeader}>
-      <Text style={styles.sectionTitleText}>{children}</Text>
+      <Text style={[styles.sectionTitleText, { color: COLORS.text }]}>{children}</Text>
       {action}
     </View>
   );
@@ -4962,9 +4982,11 @@ export function BeforeAfter({
   height?: number;
 }) {
   const [showAfter, setShowAfter] = React.useState(true);
+  const theme = useApp((s) => s.theme);
+  const isDark = theme === "dark";
 
   return (
-    <View style={[styles.baContainer, { height }]}>
+    <View style={[styles.baContainer, { height, borderColor: COLORS.border }]}>
       <Image
         source={{
           uri: showAfter
@@ -4985,18 +5007,32 @@ export function BeforeAfter({
       </View>
 
       {/* Toggle Control Bar at the Bottom */}
-      <View style={styles.baControls}>
+      <View style={[
+        styles.baControls,
+        {
+          backgroundColor: isDark ? "rgba(18, 20, 26, 0.85)" : "rgba(255, 255, 255, 0.85)",
+          borderColor: COLORS.border,
+        }
+      ]}>
         <TouchableOpacity
           onPress={() => setShowAfter(false)}
           style={[styles.baBtn, !showAfter && styles.baBtnActive]}
         >
-          <Text style={[styles.baBtnText, !showAfter && styles.baBtnTextActive]}>Before</Text>
+          <Text style={[
+            styles.baBtnText,
+            { color: !showAfter ? "#12141a" : COLORS.textMuted },
+            !showAfter && styles.baBtnTextActive
+          ]}>Before</Text>
         </TouchableOpacity>
         <TouchableOpacity
           onPress={() => setShowAfter(true)}
           style={[styles.baBtn, showAfter && styles.baBtnActive]}
         >
-          <Text style={[styles.baBtnText, showAfter && styles.baBtnTextActive]}>After AI Redesign</Text>
+          <Text style={[
+            styles.baBtnText,
+            { color: showAfter ? "#12141a" : COLORS.textMuted },
+            showAfter && styles.baBtnTextActive
+          ]}>After AI Redesign</Text>
         </TouchableOpacity>
       </View>
     </View>

@@ -3,36 +3,47 @@ import {
   View,
   Text,
   StyleSheet,
-  ScrollView,
-  Image,
   TouchableOpacity,
-  Dimensions,
   Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useAuth } from "@clerk/clerk-expo";
-import {
-  Sparkles,
-  Users,
-  Compass,
-  Upload,
-  Rocket,
-  ChevronDown,
-  ArrowRight,
-  ShieldCheck,
-} from "lucide-react-native";
-import { COLORS, Button, useStyles, useTranslation } from "../components/ui-kit";
+import { Sparkles, ChevronRight, ArrowRight } from "lucide-react-native";
+import { COLORS, Button, BeforeAfter, useStyles, useTranslation } from "../components/ui-kit";
+import { useApp } from "../store/app";
 
-import heroBg from "../assets/hero-bg.png";
-import blueprints from "../assets/blueprints.png";
-import livingRoomAccent from "../assets/black-living-room-accent-colors.png";
-
-const { width } = Dimensions.get("window");
+const FEATURED_ROOMS = [
+  {
+    id: "room-living",
+    title: "Sunlit Living Room",
+    styleName: "Rajasthan Heritage Style",
+    beforeSeed: "https://images.unsplash.com/photo-1513694203232-719a280e022f?auto=format&fit=crop&w=800&q=80",
+    afterSeed: "https://images.unsplash.com/photo-1618221195710-dd6b41faaea6?auto=format&fit=crop&w=800&q=80",
+    description: "Boring plain room turned into a vibrant Rajasthani heritage space with hand-carved wood, warm tones, and classic local textiles.",
+  },
+  {
+    id: "room-bedroom",
+    title: "Calm Japandi Bedroom",
+    styleName: "Japandi Style",
+    beforeSeed: "https://images.unsplash.com/photo-1540518614846-7eded433c457?auto=format&fit=crop&w=800&q=80",
+    afterSeed: "https://images.unsplash.com/photo-1616594039964-ae9021a400a0?auto=format&fit=crop&w=800&q=80",
+    description: "A cluttered standard bedroom redesigned into a peaceful, minimalist Japandi oasis of light oak wood, clean lines, and soft organic textures.",
+  },
+  {
+    id: "room-balcony",
+    title: "Coastal Goa Balcony",
+    styleName: "Goa Tropical Style",
+    afterSeed: "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?auto=format&fit=crop&w=800&q=80",
+    beforeSeed: "https://images.unsplash.com/photo-1713192704825-74a0017f585d?w=900&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8Z29hJTIwbGl2aW5nJTIwcm9vbXxlbnwwfHwwfHx8MA%3D%3D",
+    description: "An empty concrete balcony converted into a relaxing, green tropical Goan deck with a cane swing chair, ambient lighting, and potted plants.",
+  },
+];
 
 export default function LandingScreen() {
   const router = useRouter();
   const { isLoaded, isSignedIn } = useAuth();
+  const [slideIndex, setSlideIndex] = useState(0);
 
   useEffect(() => {
     if (isLoaded && isSignedIn) {
@@ -42,48 +53,23 @@ export default function LandingScreen() {
 
   const styles = useStyles(getStyles);
   const t = useTranslation();
-  const [activeTenet, setActiveTenet] = useState<number | null>(0);
+  const theme = useApp((s) => s.theme);
+  const isDark = theme === "dark";
 
-  const steps = [
-    { num: "01", icon: Upload, title: "Upload", desc: "Share photos of your space" },
-    { num: "02", icon: Sparkles, title: "AI Render", desc: "Generate instant 3D styles" },
-    { num: "03", icon: Users, title: "Consult", desc: "Review with top 5% experts" },
-    { num: "04", icon: Compass, title: "Plan", desc: "Get transparent blueprints" },
-    { num: "05", icon: Rocket, title: "Realize", desc: "Execute with zero commission" },
-  ];
+  const currentRoom = FEATURED_ROOMS[slideIndex];
+  const isLast = slideIndex === FEATURED_ROOMS.length - 1;
 
-  const offers = [
-    {
-      title: "AI Room Generation",
-      desc: "Upload a room photo and see it fully redesigned in 10+ visual styles instantly.",
-      icon: Sparkles,
-    },
-    {
-      title: "Expert Consultation",
-      desc: "Connect with professional interior architects for space planning and budget guidance.",
-      icon: Users,
-    },
-    {
-      title: "Interactive Design Calls",
-      desc: "Schedule high-definition 1-on-1 virtual design meetings with consultants directly.",
-      icon: Compass,
-    },
-  ];
+  const handleNext = () => {
+    if (isLast) {
+      router.replace("/(auth)/login");
+    } else {
+      setSlideIndex(slideIndex + 1);
+    }
+  };
 
-  const tenets = [
-    {
-      title: "AI-POWERED SPEED",
-      content: "Generate high-fidelity, photorealistic 3D room renders in seconds. Visualize your dream space across multiple styles instantly before spending a single rupee.",
-    },
-    {
-      title: "VETTED DESIGN EXPERTS",
-      content: "Collaborate with the top 5% of Indian interior design talent. Our consultants are verified experts in space optimization, lighting, and materials.",
-    },
-    {
-      title: "TRANSPARENT BLUEPRINTS",
-      content: "Get direct lists of furniture sources, paint codes, and modular configurations with zero hidden vendor commissions. Save up to 35% compared to traditional agencies.",
-    },
-  ];
+  const handleSkip = () => {
+    router.replace("/(auth)/login");
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -103,177 +89,64 @@ export default function LandingScreen() {
         </View>
 
         <TouchableOpacity
-          onPress={() => router.push("/(auth)/login")}
-          style={styles.loginBtn}
+          onPress={handleSkip}
+          style={styles.skipBtn}
           activeOpacity={0.8}
         >
-          <Text style={styles.loginBtnText}>{t("Log In")}</Text>
+          <Text style={styles.skipBtnText}>{t("Skip")}</Text>
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      {/* Main Slide Page Content */}
+      <View style={styles.content}>
         
-        {/* Hero Section */}
-        <View style={styles.heroSection}>
-          <Text style={styles.heroBadge}>{t("AI-POWERED DESIGN PORTAL")}</Text>
-          <Text style={styles.heroTitle}>
-            {t("Transform Your Home")}{"\n"}
-            <Text style={{ color: COLORS.primary }}>{t("with AI & Designers")}</Text>
+        {/* Title and Style Details */}
+        <View style={styles.roomHeader}>
+          <Text style={styles.badgeText}>
+            {t("DESIGN PREVIEW")} · {slideIndex + 1} / {FEATURED_ROOMS.length}
           </Text>
-          <Text style={styles.heroSubtitle}>
-            {t("Generate photorealistic room designs in seconds and book 1-on-1 virtual consultations with India's top vetted design specialists.")}
-          </Text>
+          <Text style={styles.roomTitle}>{t(currentRoom.title)}</Text>
+          <Text style={styles.roomStyleText}>{t(currentRoom.styleName)}</Text>
+          <Text style={styles.roomDescription}>{t(currentRoom.description)}</Text>
+        </View>
 
-          {/* Hero Banner Image */}
-          <View style={styles.bannerWrapper}>
-            <Image source={livingRoomAccent} style={styles.bannerImage} resizeMode="cover" />
-            <View style={styles.bannerOverlay} />
-          </View>
-
-          <Button
-            title={t("START DESIGNING")}
-            size="lg"
-            full
-            onPress={() => router.push("/onboarding")}
-            style={styles.heroCta}
+        {/* Interactive Comparison Slider */}
+        <View style={styles.sliderWrapper}>
+          <BeforeAfter 
+            key={currentRoom.id} // Key forces recreate component state on slide change
+            beforeSeed={currentRoom.beforeSeed} 
+            afterSeed={currentRoom.afterSeed} 
+            height={350} 
           />
         </View>
 
-        {/* Quote Banner */}
-        <View style={styles.quoteCard}>
-          <View style={styles.quoteBorder} />
-          <Text style={styles.quoteText}>
-            "{t("Our mission is to democratize premium interior design. By combining advanced AI visualization with real-time designer expertise, we make beautiful homes accessible to everyone.")}"
-          </Text>
-        </View>
-
-        {/* 5D Process Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionSub}>{t("THE WORKFLOW")}</Text>
-          <Text style={styles.sectionTitle}>{t("How MyDezineGhar Works")}</Text>
-          <View style={styles.divider} />
-
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.processScroll}
-          >
-            {steps.map((step, idx) => {
-              const StepIcon = step.icon;
-              return (
-                <View key={idx} style={styles.processItem}>
-                  <View style={styles.processCircleContainer}>
-                    <Text style={styles.processNum}>{step.num}</Text>
-                    <View style={styles.processCircle}>
-                      <StepIcon size={20} color={COLORS.primary} />
-                    </View>
-                    {idx < steps.length - 1 && <View style={styles.processLine} />}
-                  </View>
-                  <Text style={styles.processTitle}>{t(step.title)}</Text>
-                  <Text style={styles.processDesc}>{t(step.desc)}</Text>
-                </View>
-              );
-            })}
-          </ScrollView>
-        </View>
-
-        {/* What We Offer */}
-        <View style={styles.section}>
-          <Text style={styles.sectionSub}>{t("SERVICES")}</Text>
-          <Text style={styles.sectionTitle}>{t("What We Offer")}</Text>
-          <View style={styles.divider} />
-
-          <View style={styles.offersGrid}>
-            {offers.map((offer, idx) => {
-              const OfferIcon = offer.icon;
-              return (
-                <View key={idx} style={styles.offerCard}>
-                  <View style={styles.offerIconWrapper}>
-                    <OfferIcon size={20} color="#12141a" />
-                  </View>
-                  <Text style={styles.offerCardTitle}>{t(offer.title)}</Text>
-                  <Text style={styles.offerCardDesc}>{t(offer.desc)}</Text>
-                </View>
-              );
-            })}
+        {/* Slide Indicators and Navigation Button */}
+        <View style={styles.footerSection}>
+          {/* Indicator Dots */}
+          <View style={styles.indicatorContainer}>
+            {FEATURED_ROOMS.map((_, idx) => (
+              <View
+                key={idx}
+                style={[
+                  styles.indicatorDot,
+                  idx === slideIndex ? styles.indicatorActive : styles.indicatorInactive,
+                ]}
+              />
+            ))}
           </View>
-        </View>
 
-        {/* Stats Row */}
-        <View style={styles.statsSection}>
-          <View style={styles.statsGrid}>
-            <View style={styles.statBox}>
-              <Text style={styles.statVal}>10k+</Text>
-              <Text style={styles.statLbl}>{t("AI RENDERS")}</Text>
-            </View>
-            <View style={styles.statBox}>
-              <Text style={styles.statVal}>500+</Text>
-              <Text style={styles.statLbl}>{t("VETTED EXPERTS")}</Text>
-            </View>
-            <View style={styles.statBox}>
-              <Text style={styles.statVal}>98.7%</Text>
-              <Text style={styles.statLbl}>{t("SATISFACTION")}</Text>
-            </View>
-            <View style={styles.statBox}>
-              <Text style={styles.statVal}>15m</Text>
-              <Text style={styles.statLbl}>{t("MATCH TIME")}</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Core Design Philosophy */}
-        <View style={styles.section}>
-          <Text style={styles.sectionSub}>{t("PHILOSOPHY")}</Text>
-          <Text style={styles.sectionTitle}>{t("Our Core Tenets")}</Text>
-          <View style={styles.divider} />
-
-          <View style={styles.tenetsContainer}>
-            {tenets.map((tenet, idx) => {
-              const isActive = activeTenet === idx;
-              return (
-                <TouchableOpacity
-                  key={idx}
-                  activeOpacity={0.8}
-                  onPress={() => setActiveTenet(isActive ? null : idx)}
-                  style={[styles.tenetItem, isActive && styles.tenetItemActive]}
-                >
-                  <View style={styles.tenetHeader}>
-                    <Text style={[styles.tenetTitle, isActive && styles.tenetTitleActive]}>
-                      {idx + 1}. {t(tenet.title)}
-                    </Text>
-                    <ChevronDown
-                      size={18}
-                      color={isActive ? COLORS.primary : COLORS.textMuted}
-                      style={{ transform: [{ rotate: isActive ? "180deg" : "0deg" }] }}
-                    />
-                  </View>
-                  {isActive && <Text style={styles.tenetContent}>{t(tenet.content)}</Text>}
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </View>
-
-        {/* Footer CTA */}
-        <View style={styles.footerCta}>
-          <Text style={styles.footerTitle}>{t("Ready to Redesign Your Home?")}</Text>
-          <Text style={styles.footerSubtitle}>
-            {t("Step into the future of luxury interior styling with MyDezineGhar.")}
-          </Text>
-
+          {/* Action CTA Button */}
           <Button
-            title={t("START AI DESIGN NOW")}
+            title={isLast ? t("Login or Sign Up") : t("Next Design")}
             size="lg"
             full
-            onPress={() => router.push("/onboarding")}
-            style={{ marginTop: 24 }}
+            icon={isLast ? <ArrowRight size={18} color="#12141a" /> : <ChevronRight size={18} color="#12141a" />}
+            onPress={handleNext}
+            style={styles.ctaButton}
           />
-
-          <Text style={styles.copyright}>
-            © {new Date().getFullYear()} MyDezineGhar. {t("All Rights Reserved.")}
-          </Text>
         </View>
-      </ScrollView>
+
+      </View>
     </SafeAreaView>
   );
 }
@@ -287,33 +160,33 @@ const getStyles = (theme: "light" | "dark") => {
     },
     glowTop: {
       position: "absolute",
-      top: -150,
-      right: -100,
-      width: 350,
-      height: 350,
-      borderRadius: 175,
-      backgroundColor: "rgba(205, 162, 80, 0.15)",
-      opacity: 0.7,
+      top: -100,
+      right: -80,
+      width: 320,
+      height: 320,
+      borderRadius: 160,
+      backgroundColor: isDark ? "rgba(205, 162, 80, 0.12)" : "rgba(205, 162, 80, 0.25)",
+      opacity: 0.8,
     },
     glowBottom: {
       position: "absolute",
-      bottom: -150,
-      left: -100,
-      width: 350,
-      height: 350,
-      borderRadius: 175,
-      backgroundColor: "rgba(184, 143, 62, 0.08)",
-      opacity: 0.7,
+      bottom: -100,
+      left: -80,
+      width: 320,
+      height: 320,
+      borderRadius: 160,
+      backgroundColor: isDark ? "rgba(184, 143, 62, 0.06)" : "rgba(255, 218, 163, 0.2)",
+      opacity: 0.8,
     },
     header: {
-      height: 60,
       flexDirection: "row",
-      justifyContent: "space-between",
       alignItems: "center",
-      paddingHorizontal: 24,
+      justifyContent: "space-between",
+      paddingHorizontal: 20,
+      paddingVertical: 14,
       borderBottomWidth: 1,
       borderBottomColor: COLORS.border,
-      zIndex: 10,
+      backgroundColor: COLORS.background,
     },
     logoContainer: {
       flexDirection: "row",
@@ -321,12 +194,17 @@ const getStyles = (theme: "light" | "dark") => {
       gap: 8,
     },
     logoIcon: {
-      width: 28,
-      height: 28,
-      borderRadius: 8,
+      width: 32,
+      height: 32,
+      borderRadius: 10,
       backgroundColor: COLORS.primary,
       alignItems: "center",
       justifyContent: "center",
+      shadowColor: COLORS.primary,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.3,
+      shadowRadius: 4,
+      elevation: 2,
     },
     logoText: {
       fontSize: 18,
@@ -334,297 +212,101 @@ const getStyles = (theme: "light" | "dark") => {
       color: COLORS.text,
       letterSpacing: -0.5,
     },
-    loginBtn: {
+    skipBtn: {
       backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(18, 20, 26, 0.05)",
-      borderColor: COLORS.border,
+      borderColor: isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(18, 20, 26, 0.1)",
       borderWidth: 1,
       paddingHorizontal: 16,
-      paddingVertical: 6,
-      borderRadius: 14,
-    },
-    loginBtnText: {
-      color: COLORS.text,
-      fontSize: 12,
-      fontWeight: "700",
-    },
-    scrollContent: {
-      paddingBottom: 40,
-    },
-    heroSection: {
-      paddingHorizontal: 24,
-      paddingTop: 30,
-      alignItems: "center",
-    },
-    heroBadge: {
-      fontSize: 11,
-      fontWeight: "800",
-      color: COLORS.primary,
-      letterSpacing: 1.5,
-      marginBottom: 12,
-    },
-    heroTitle: {
-      fontSize: 28,
-      fontWeight: "900",
-      color: COLORS.text,
-      textAlign: "center",
-      lineHeight: 34,
-      letterSpacing: -0.5,
-    },
-    heroSubtitle: {
-      fontSize: 14,
-      color: COLORS.textMuted,
-      textAlign: "center",
-      lineHeight: 22,
-      marginTop: 14,
-      paddingHorizontal: 10,
-    },
-    bannerWrapper: {
-      width: "100%",
-      height: 180,
-      borderRadius: 24,
-      overflow: "hidden",
-      marginTop: 24,
-      position: "relative",
-      borderWidth: 1,
-      borderColor: COLORS.border,
-    },
-    bannerImage: {
-      width: "100%",
-      height: "100%",
-    },
-    bannerOverlay: {
-      ...StyleSheet.absoluteFillObject,
-      backgroundColor: "rgba(10, 13, 20, 0.2)",
-    },
-    heroCta: {
-      marginTop: 24,
-    },
-    quoteCard: {
-      marginHorizontal: 24,
-      marginTop: 32,
-      backgroundColor: isDark ? "rgba(26, 32, 44, 0.6)" : "rgba(255, 255, 255, 0.8)",
-      borderColor: COLORS.border,
-      borderWidth: 1,
-      borderRadius: 20,
-      padding: 20,
-      position: "relative",
-      overflow: "hidden",
-    },
-    quoteBorder: {
-      position: "absolute",
-      left: 0,
-      top: 0,
-      bottom: 0,
-      width: 4,
-      backgroundColor: COLORS.primary,
-    },
-    quoteText: {
-      fontSize: 14,
-      fontStyle: "italic",
-      color: COLORS.text,
-      lineHeight: 22,
-      paddingLeft: 8,
-      fontWeight: "500",
-    },
-    section: {
-      marginTop: 40,
-      paddingHorizontal: 24,
-    },
-    sectionSub: {
-      fontSize: 10,
-      fontWeight: "800",
-      color: COLORS.primary,
-      letterSpacing: 2,
-    },
-    sectionTitle: {
-      fontSize: 22,
-      fontWeight: "900",
-      color: COLORS.text,
-      marginTop: 4,
-    },
-    divider: {
-      width: 40,
-      height: 3,
-      backgroundColor: COLORS.primary,
-      marginTop: 8,
-      marginBottom: 20,
-      borderRadius: 2,
-    },
-    processScroll: {
-      gap: 16,
-      paddingRight: 24,
       paddingVertical: 8,
-    },
-    processItem: {
-      width: 140,
-      alignItems: "flex-start",
-    },
-    processCircleContainer: {
-      flexDirection: "row",
-      alignItems: "center",
-      position: "relative",
-      width: "100%",
-      marginBottom: 12,
-    },
-    processNum: {
-      fontSize: 24,
-      fontWeight: "900",
-      color: isDark ? "rgba(255, 255, 255, 0.05)" : "rgba(0, 0, 0, 0.05)",
-      position: "absolute",
-      left: -4,
-      top: -12,
-    },
-    processCircle: {
-      width: 40,
-      height: 40,
       borderRadius: 20,
-      backgroundColor: isDark ? "#111215" : "#ffffff",
-      borderWidth: 1.5,
-      borderColor: COLORS.primary,
-      alignItems: "center",
-      justifyContent: "center",
-      zIndex: 2,
-      shadowColor: "#000",
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-      elevation: 2,
     },
-    processLine: {
-      position: "absolute",
-      left: 40,
-      right: -16,
-      height: 1,
-      backgroundColor: COLORS.border,
-      zIndex: 1,
-    },
-    processTitle: {
-      fontSize: 14,
-      fontWeight: "700",
+    skipBtnText: {
       color: COLORS.text,
-    },
-    processDesc: {
-      fontSize: 11,
-      color: COLORS.textMuted,
-      lineHeight: 16,
-      marginTop: 4,
-    },
-    offersGrid: {
-      gap: 16,
-    },
-    offerCard: {
-      backgroundColor: isDark ? "rgba(26, 32, 44, 0.5)" : "rgba(255, 255, 255, 0.8)",
-      borderColor: COLORS.border,
-      borderWidth: 1,
-      borderRadius: 20,
-      padding: 20,
-    },
-    offerIconWrapper: {
-      width: 40,
-      height: 40,
-      borderRadius: 12,
-      backgroundColor: COLORS.primary,
-      alignItems: "center",
-      justifyContent: "center",
-      marginBottom: 14,
-    },
-    offerCardTitle: {
-      fontSize: 16,
-      fontWeight: "800",
-      color: COLORS.text,
-    },
-    offerCardDesc: {
       fontSize: 13,
-      color: COLORS.textMuted,
-      lineHeight: 18,
-      marginTop: 6,
+      fontWeight: "700",
     },
-    statsSection: {
-      backgroundColor: isDark ? "#111215" : "#f0f2f5",
-      marginTop: 40,
-      paddingVertical: 24,
-      borderTopWidth: 1,
-      borderBottomWidth: 1,
-      borderColor: COLORS.border,
+    content: {
+      flex: 1,
+      paddingHorizontal: 20,
+      justifyContent: "center",
+      gap: 16,
+      paddingVertical: Platform.OS === "ios" ? 16 : 24,
     },
-    statsGrid: {
-      flexDirection: "row",
-      flexWrap: "wrap",
-      justifyContent: "space-between",
-      paddingHorizontal: 24,
+    roomHeader: {
+      marginTop: 10,
+      alignItems: "stretch",
     },
-    statBox: {
-      width: "48%",
-      paddingVertical: 12,
-      alignItems: "center",
-    },
-    statVal: {
-      fontSize: 24,
-      fontWeight: "900",
-      color: COLORS.primary,
-    },
-    statLbl: {
+    badgeText: {
+      backgroundColor: isDark ? "rgba(255, 255, 255, 0.08)" : "rgba(18, 20, 26, 0.05)",
+      alignSelf: "flex-start",
+      paddingHorizontal: 10,
+      paddingVertical: 4,
+      borderRadius: 10,
       fontSize: 9,
       fontWeight: "800",
       color: COLORS.textMuted,
-      letterSpacing: 1,
-      marginTop: 4,
+      letterSpacing: 0.5,
+      marginBottom: 10,
     },
-    tenetsContainer: {
-      gap: 12,
-    },
-    tenetItem: {
-      backgroundColor: isDark ? "rgba(26, 32, 44, 0.5)" : "rgba(255, 255, 255, 0.8)",
-      borderColor: COLORS.border,
-      borderWidth: 1,
-      borderRadius: 16,
-      padding: 16,
-    },
-    tenetItemActive: {
-      borderColor: COLORS.primary,
-    },
-    tenetHeader: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-    },
-    tenetTitle: {
-      fontSize: 14,
-      fontWeight: "800",
-      color: COLORS.textMuted,
-    },
-    tenetTitleActive: {
-      color: COLORS.text,
-    },
-    tenetContent: {
-      fontSize: 13,
-      color: COLORS.textMuted,
-      lineHeight: 20,
-      marginTop: 10,
-    },
-    footerCta: {
-      marginTop: 48,
-      paddingHorizontal: 24,
-      alignItems: "center",
-    },
-    footerTitle: {
-      fontSize: 22,
+    roomTitle: {
+      fontSize: 24,
       fontWeight: "900",
       color: COLORS.text,
-      textAlign: "center",
     },
-    footerSubtitle: {
+    roomStyleText: {
+      fontSize: 14,
+      fontWeight: "700",
+      color: COLORS.primaryDark,
+      marginTop: 2,
+      marginBottom: 8,
+    },
+    roomDescription: {
       fontSize: 13,
       color: COLORS.textMuted,
-      textAlign: "center",
-      lineHeight: 20,
-      marginTop: 8,
+      lineHeight: 18,
     },
-    copyright: {
-      fontSize: 11,
-      color: COLORS.textMuted,
-      marginTop: 32,
-      textAlign: "center",
+    sliderWrapper: {
+      flex: 1,
+      justifyContent: "center",
+      marginVertical: 18,
+      borderRadius: 24,
+      overflow: "hidden",
+      ...Platform.select({
+        ios: {
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 8 },
+          shadowOpacity: isDark ? 0.35 : 0.12,
+          shadowRadius: 16,
+        },
+        android: {
+          elevation: 6,
+        },
+      }),
+    },
+    footerSection: {
+      alignItems: "stretch",
+      gap: 16,
+      marginBottom: Platform.OS === "ios" ? 10 : 0,
+    },
+    indicatorContainer: {
+      flexDirection: "row",
+      justifyContent: "center",
+      gap: 8,
+    },
+    indicatorDot: {
+      height: 6,
+      borderRadius: 3,
+    },
+    indicatorActive: {
+      width: 20,
+      backgroundColor: COLORS.primary,
+    },
+    indicatorInactive: {
+      width: 6,
+      backgroundColor: COLORS.border,
+    },
+    ctaButton: {
+      width: "100%",
     },
   });
 };

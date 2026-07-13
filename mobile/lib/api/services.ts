@@ -57,6 +57,11 @@ export const DesignService = {
     return res.data;
   },
 
+  async delete(id: string) {
+    const res = await apiClient.delete(`/designs/${id}`);
+    return res.data;
+  },
+
   async submitChallenge(id: string) {
     const res = await apiClient.post(`/designs/${id}/challenge`);
     return res.data;

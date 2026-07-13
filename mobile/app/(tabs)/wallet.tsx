@@ -24,6 +24,8 @@ export default function WalletScreen() {
   const router = useRouter();
   const styles = useStyles(getStyles);
   const t = useTranslation();
+  const theme = useApp((s) => s.theme);
+  const user = useApp((s) => s.user);
   const { data: walletBalance = 0, isLoading: loadingBalance, refetch: refetchBalance } = useWalletBalanceQuery();
   const { data: realTransactions = [], isLoading: loadingHistory, refetch: refetchHistory } = useWalletHistoryQuery();
   const topUpMutation = useWalletTopUpMutation();
@@ -138,6 +140,10 @@ export default function WalletScreen() {
       setPendingAmount(amount);
       const apiKey = process.env.EXPO_PUBLIC_RAZORPAY_KEY_ID || "rzp_live_SrZjx0jgQ3fnmi";
       
+      const isDark = theme === "dark";
+      const htmlBg = isDark ? "#12141a" : "#FFF9D2";
+      const htmlTextCol = isDark ? "#ffffff" : "#12141a";
+
       const html = `
         <!DOCTYPE html>
         <html>
@@ -146,14 +152,14 @@ export default function WalletScreen() {
           <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
           <style>
             body {
-              background-color: #12141a;
+              background-color: ${htmlBg};
               display: flex;
               align-items: center;
               justify-content: center;
               height: 100vh;
               margin: 0;
               font-family: sans-serif;
-              color: #ffffff;
+              color: ${htmlTextCol};
             }
             .loader {
               text-align: center;
@@ -225,7 +231,6 @@ export default function WalletScreen() {
     }
   };
 
-  const user = useApp((s) => s.user);
   const isConsultant = user?.role === "CONSULTANT";
 
   return (

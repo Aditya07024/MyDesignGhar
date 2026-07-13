@@ -226,7 +226,7 @@ export default function GenerateScreen() {
                 title={t("Take Photo")}
                 size="sm"
                 variant="outline"
-                icon={<Camera size={14} color="#ffffff" />}
+                icon={<Camera size={14} color={COLORS.text} />}
                 onPress={handleTakePhoto}
               />
               <Button

@@ -51,7 +51,7 @@ export default function ConsultantsScreen() {
           <Text style={styles.subtitle}>{t("Book verified interior experts")}</Text>
         </View>
         <TouchableOpacity style={styles.filterBtn} activeOpacity={0.8}>
-          <SlidersHorizontal size={20} color="#ffffff" />
+          <SlidersHorizontal size={20} color={COLORS.text} />
         </TouchableOpacity>
       </View>
 

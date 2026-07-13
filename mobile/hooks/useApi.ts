@@ -73,6 +73,16 @@ export function useToggleFavoriteMutation() {
   });
 }
 
+export function useDeleteDesignMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: DesignService.delete,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["designs"] });
+    },
+  });
+}
+
 // --- Wallet Hooks ---
 export function useWalletBalanceQuery(enabled: boolean = true) {
   const isAuthed = useApp((s) => s.isAuthed);

@@ -21,6 +21,9 @@ router.get("/image/:id/download", authenticate as any, DesignController.getDownl
 // Toggle favorite design
 router.post("/:id/favorite", authenticate as any, DesignController.toggleFavorite as any);
 
+// Delete design (Soft delete)
+router.delete("/:id", authenticate as any, DesignController.delete as any);
+
 // Submit to daily challenges
 router.post("/:id/challenge", authenticate as any, DesignController.submitChallenge as any);
 
