@@ -17,13 +17,13 @@ import { useApp } from "../store/app";
 // Premium Color System
 export const COLORS = {
   get primary() {
-    return "#8CC0EB"; // Sky Blue Accent
+    return "#FBC02D"; // Yellow/Gold Accent
   },
   get primaryDark() {
-    return "#5b9ed3";
+    return "#F9A825"; // Darker Gold Accent
   },
   get background() {
-    return useApp.getState().theme === "dark" ? "#12141a" : "#FFF9D2"; // Dark Gray vs Cream Base
+    return useApp.getState().theme === "dark" ? "#12141a" : "#F5F5DC"; // Dark Gray vs Beige Base
   },
   get card() {
     return useApp.getState().theme === "dark" ? "#1a202c" : "#FFEBCC"; // Dark Card vs Peach Card
@@ -41,13 +41,19 @@ export const COLORS = {
     return useApp.getState().theme === "dark" ? "#a0aec0" : "#4b5563";
   },
   get accent() {
-    return "#8CC0EB";
+    return "#FBC02D";
   },
   get success() {
     return "#10b981";
   },
   get destructive() {
     return "#ef4444";
+  },
+  get button() {
+    return "#C62828"; // Red button color
+  },
+  get buttonText() {
+    return "#ffffff"; // White text for red button
   },
 };
 
@@ -4775,8 +4781,8 @@ export function Button({
   const isSecondary = variant === "secondary";
   const isSuccess = variant === "success";
 
-  let bg = COLORS.primary;
-  let textCol = "#12141a";
+  let bg = COLORS.button;
+  let textCol = COLORS.buttonText;
   let borderCol = "transparent";
 
   if (isSecondary) {

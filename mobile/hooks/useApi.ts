@@ -77,8 +77,9 @@ export function useDeleteDesignMutation() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: DesignService.delete,
-    onSuccess: () => {
+    onSuccess: (data, id) => {
       queryClient.invalidateQueries({ queryKey: ["designs"] });
+      queryClient.removeQueries({ queryKey: ["designs", id] });
     },
   });
 }

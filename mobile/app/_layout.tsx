@@ -307,6 +307,8 @@ export default function RootLayout() {
               <Stack.Screen name="referral" options={{ title: "Referral Program" }} />
               <Stack.Screen name="sessions" options={{ title: "Session Details" }} />
               <Stack.Screen name="settings" options={{ title: "Settings" }} />
+              <Stack.Screen name="details/[id]" options={{ title: "Design Details" }} />
+              <Stack.Screen name="consultants/[id]" options={{ title: "Consultant Profile" }} />
             </Stack>
           )}
           {isBackendDown && (

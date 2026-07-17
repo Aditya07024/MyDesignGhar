@@ -11,7 +11,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import { Search, Plus, ImageOff } from "lucide-react-native";
 import { COLORS, Button, Chip, EmptyState, useStyles, useTranslation } from "../../components/ui-kit";
 import { useApp } from "../../store/app";
@@ -30,6 +30,12 @@ export default function DesignsScreen() {
 
   const { data: realDesigns, isLoading, refetch } = useDesignsQuery();
   const [refreshing, setRefreshing] = useState(false);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      refetch();
+    }, [refetch])
+  );
 
   const handleRefresh = async () => {
     setRefreshing(true);

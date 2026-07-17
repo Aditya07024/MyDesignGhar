@@ -198,7 +198,7 @@ const getStyles = (theme: "light" | "dark") => StyleSheet.create({
     lineHeight: 18,
   },
   readBtn: {
-    backgroundColor: COLORS.primary,
+    backgroundColor: COLORS.button,
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 12,
@@ -207,7 +207,7 @@ const getStyles = (theme: "light" | "dark") => StyleSheet.create({
     alignItems: "center",
   },
   readBtnText: {
-    color: "#12141a",
+    color: COLORS.buttonText,
     fontSize: 11,
     fontWeight: "700",
   },

@@ -46,7 +46,7 @@ export default function DesignDetailScreen() {
     return designs.find((x) => x.id === id);
   }, [realDesign, id]);
 
-  if (isLoading) {
+  if (isLoading || deleteMutation.isPending) {
     return (
       <SafeAreaView style={[styles.container, { justifyContent: "center", alignItems: "center" }]} edges={["bottom", "left", "right"]}>
         <ActivityIndicator size="large" color={COLORS.primary} />
@@ -238,21 +238,40 @@ export default function DesignDetailScreen() {
             variant="ghost"
             icon={<Trash2 size={16} color={COLORS.destructive} />}
             onPress={() => {
-              Alert.alert("Delete Design", "Are you sure you want to delete this design?", [
-                { text: "Cancel", style: "cancel" },
-                {
-                  text: "Delete",
-                  style: "destructive",
-                  onPress: async () => {
-                    try {
-                      await deleteMutation.mutateAsync(d.id);
-                      router.back();
-                    } catch (err: any) {
-                      Alert.alert("Error", err.response?.data?.message || "Failed to delete design.");
-                    }
+              const performDelete = async () => {
+                try {
+                  // Simulate successful deletion for mock items
+                  if (d.id.startsWith("d") && d.id.length <= 4) {
+                    router.back();
+                    return;
+                  }
+                  await deleteMutation.mutateAsync(d.id);
+                  router.back();
+                } catch (err: any) {
+                  const errorMsg = err.response?.data?.message || "Failed to delete design.";
+                  if (Platform.OS === "web") {
+                    alert(`Error: ${errorMsg}`);
+                  } else {
+                    Alert.alert("Error", errorMsg);
+                  }
+                }
+              };
+
+              if (Platform.OS === "web") {
+                const confirmDelete = window.confirm("Are you sure you want to delete this design?");
+                if (confirmDelete) {
+                  performDelete();
+                }
+              } else {
+                Alert.alert("Delete Design", "Are you sure you want to delete this design?", [
+                  { text: "Cancel", style: "cancel" },
+                  {
+                    text: "Delete",
+                    style: "destructive",
+                    onPress: performDelete,
                   },
-                },
-              ]);
+                ]);
+              }
             }}
             style={[styles.actionBtn, styles.deleteBtn]}
           />

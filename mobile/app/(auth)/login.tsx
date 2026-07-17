@@ -8,13 +8,14 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, Link } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import * as Linking from "expo-linking";
 import { useSignIn, useOAuth, useAuth } from "@clerk/clerk-expo";
-import { Mail, Lock, Sparkles } from "lucide-react-native";
+import { Mail, Lock } from "lucide-react-native";
 import { COLORS, Button, useStyles } from "../../components/ui-kit";
 import { useApp } from "../../store/app";
 import { useSyncMutation } from "../../hooks/useApi";
@@ -314,7 +315,11 @@ export default function LoginScreen() {
         <ScrollView contentContainerStyle={styles.scrollContainer} keyboardShouldPersistTaps="handled">
           <View style={styles.header}>
             <View style={styles.logoContainer}>
-              <Sparkles size={28} color="#12141a" />
+              <Image
+                source={require("../../assets/logo.png")}
+                style={{ width: "100%", height: "100%", borderRadius: 18 }}
+                resizeMode="cover"
+              />
             </View>
             <Text style={styles.title}>
               {roleType === "USER" ? "Welcome back" : "Consultant Portal"}

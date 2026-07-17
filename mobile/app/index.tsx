@@ -2,7 +2,6 @@ import React, { useEffect } from "react";
 import { View, Text, StyleSheet, Image, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
 import { useAuth } from "@clerk/clerk-expo";
-import { Sparkles } from "lucide-react-native";
 import { COLORS, img, useTranslation } from "../components/ui-kit";
 
 export default function IndexSplash() {
@@ -41,14 +40,17 @@ export default function IndexSplash() {
           </View>
         </View>
 
-        {/* Icon Container */}
-        <View style={styles.iconContainer}>
-          <Sparkles size={32} color="#12141a" />
+        {/* Logo Header */}
+        <View style={styles.logoHeader}>
+          <Image
+            source={require("../assets/logo.png")}
+            style={styles.logoIcon}
+            resizeMode="cover"
+          />
+          <Text style={styles.title}>
+            MyDezine<Text style={styles.accentText}>Ghar</Text>
+          </Text>
         </View>
-
-        <Text style={styles.title}>
-          MyDezine<Text style={styles.accentText}>Ghar</Text>
-        </Text>
         <Text style={styles.subtitle}>{t("AI Interior Design for India")}</Text>
       </View>
 
@@ -104,19 +106,22 @@ const styles = StyleSheet.create({
     width: 110,
     height: 110,
   },
-  iconContainer: {
-    width: 64,
-    height: 64,
-    borderRadius: 22,
-    backgroundColor: COLORS.primary,
+  logoHeader: {
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
+    gap: 12,
     marginBottom: 20,
+  },
+  logoIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
     shadowColor: COLORS.primary,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 6,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 8,
+    elevation: 4,
   },
   title: {
     fontSize: 32,

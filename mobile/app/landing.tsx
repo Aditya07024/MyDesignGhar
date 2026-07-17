@@ -5,11 +5,12 @@ import {
   StyleSheet,
   TouchableOpacity,
   Platform,
+  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useAuth } from "@clerk/clerk-expo";
-import { Sparkles, ChevronRight, ArrowRight } from "lucide-react-native";
+import { ChevronRight, ArrowRight } from "lucide-react-native";
 import { COLORS, Button, BeforeAfter, useStyles, useTranslation } from "../components/ui-kit";
 import { useApp } from "../store/app";
 
@@ -81,7 +82,11 @@ export default function LandingScreen() {
       <View style={styles.header}>
         <View style={styles.logoContainer}>
           <View style={styles.logoIcon}>
-            <Sparkles size={18} color="#12141a" />
+            <Image
+              source={require("../assets/logo.png")}
+              style={{ width: "100%", height: "100%", borderRadius: 10 }}
+              resizeMode="cover"
+            />
           </View>
           <Text style={styles.logoText}>
             MyDezine<Text style={{ color: COLORS.primary }}>Ghar</Text>

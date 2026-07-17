@@ -575,7 +575,11 @@ export default function HomeScreen() {
           <GlassCard style={styles.modalCard}>
             <View style={styles.modalHeader}>
               <View style={styles.modalLogoContainer}>
-                <Sparkles size={24} color="#12141a" />
+                <Image
+                  source={require("../../assets/logo.png")}
+                  style={{ width: "100%", height: "100%", borderRadius: 16 }}
+                  resizeMode="cover"
+                />
               </View>
               <Text style={styles.modalTitle}>{t("Complete Profile")}</Text>
               <Text style={styles.modalSubtitle}>{t("Please provide your name and phone number to continue.")}</Text>
