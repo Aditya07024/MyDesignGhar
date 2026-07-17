@@ -9,20 +9,6 @@ import { logger } from "../utils/logger";
 import { NotificationService } from "../services/notification.service";
 import crypto from "crypto";
 
-const resolveUrl = (url: string, baseUrl: string) => {
-  if (!url) return url;
-  return url.replace(/^https?:\/\/[^\/]+/, baseUrl);
-};
-
-const getBaseUrl = (req: any) => {
-  if (env.BACKEND_URL && !env.BACKEND_URL.includes("localhost") && !env.BACKEND_URL.includes("127.0.0.1")) {
-    return env.BACKEND_URL;
-  }
-  const isHttps = req.headers["x-forwarded-proto"] === "https" || req.secure;
-  const protocol = isHttps ? "https" : "http";
-  return `${protocol}://${req.headers.host}`;
-};
-
 export class DesignController {
   /**
    * Generate 3 AI designs based on upload
@@ -239,17 +225,16 @@ export class DesignController {
         }
       }
 
-      const baseUrl = getBaseUrl(req);
       return res.status(201).json({
         message: "Designs generated successfully",
         design: {
           ...design,
-          depthMapUrl: resolveUrl(depthMapUrl, baseUrl),
-          beforeUrl: `${baseUrl}/uploads/previews/${design.id}/before.jpg`,
+          depthMapUrl,
+          beforeUrl: `${env.BACKEND_URL}/uploads/previews/${design.id}/before.jpg`,
           images: uploadedImages.map((img) => ({
             id: img.id,
-            previewUrl: resolveUrl(img.previewUrl, baseUrl),
-            thumbnailUrl: resolveUrl(img.thumbnailUrl, baseUrl),
+            previewUrl: img.previewUrl,
+            thumbnailUrl: img.thumbnailUrl,
           })),
         },
       });
@@ -281,7 +266,6 @@ export class DesignController {
         include: { images: true, purchases: true },
       });
 
-      const baseUrl = getBaseUrl(req);
       return res.json({
         designs: userDesigns.map((d: any) => ({
           id: d.id,
@@ -291,8 +275,8 @@ export class DesignController {
           createdAt: d.createdAt,
           images: d.images.map((img: any) => ({
             id: img.id,
-            previewUrl: resolveUrl(img.previewUrl, baseUrl),
-            thumbnailUrl: resolveUrl(img.thumbnailUrl, baseUrl),
+            previewUrl: img.previewUrl,
+            thumbnailUrl: img.thumbnailUrl,
           })),
           purchased: true, // User owns these designs, so they are unlocked
         })),
@@ -323,7 +307,6 @@ export class DesignController {
       const isPurchased = design.purchases.length > 0;
       const hasPurchasedWhole = design.purchases.some((p: any) => p.designImageId === null);
 
-      const baseUrl = getBaseUrl(req);
       return res.json({
         design: {
           id: design.id,
@@ -333,12 +316,12 @@ export class DesignController {
           createdAt: design.createdAt,
           isOwner,
           purchased: isPurchased,
-          beforeUrl: `${baseUrl}/uploads/previews/${design.id}/before.jpg`,
+          beforeUrl: `${env.BACKEND_URL}/uploads/previews/${design.id}/before.jpg`,
           images: design.images.map((img: any) => ({
             id: img.id,
-            previewUrl: resolveUrl(img.previewUrl, baseUrl),
-            thumbnailUrl: resolveUrl(img.thumbnailUrl, baseUrl),
-            depthMapUrl: img.depthMapUrl ? resolveUrl(img.depthMapUrl, baseUrl) : null,
+            previewUrl: img.previewUrl,
+            thumbnailUrl: img.thumbnailUrl,
+            depthMapUrl: img.depthMapUrl,
             purchased: hasPurchasedWhole || design.purchases.some((p: any) => p.designImageId === img.id),
           })),
         },

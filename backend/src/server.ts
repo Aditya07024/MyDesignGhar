@@ -17,7 +17,7 @@ async function bootstrap() {
     // 3. Start Express listener
     app.listen(env.PORT, () => {
       logger.info(`🔥 Server running in ${env.NODE_ENV} mode on http://localhost:${env.PORT}`);
-      logger.info(`📖 API Documentation available at http://localhost:${env.PORT}/api-docs`);
+      // logger.info(`📖 API Documentation available at http://localhost:${env.PORT}/api-docs`);
     });
   } catch (error: any) {
     logger.error(`Fatal error during server bootstrap: ${error.message}`);

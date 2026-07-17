@@ -8,6 +8,7 @@ import {
   Share,
   Alert,
   ActivityIndicator,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter, useLocalSearchParams } from "expo-router";
@@ -85,87 +86,154 @@ export default function ResultScreen() {
   const handleDownloadPurchased = async (imageId: string) => {
     try {
       const res = await DesignService.getDownloadUrl(imageId);
-      Alert.alert(
-        t("Download Link Ready"),
-        t("High-res image is ready! Copy the link to open in your browser:") + `\n\n${res.downloadUrl}`,
-        [
-          { text: t("Close") }
-        ]
-      );
+      if (Platform.OS === "web") {
+        window.open(res.downloadUrl, "_blank");
+      } else {
+        Alert.alert(
+          t("Download Link Ready"),
+          t("High-res image is ready! Copy the link to open in your browser:") + `\n\n${res.downloadUrl}`,
+          [
+            { text: t("Close") }
+          ]
+        );
+      }
     } catch (err: any) {
-      Alert.alert(t("Error") || "Error", err.response?.data?.message || t("Failed to retrieve download link."));
+      const errorMsg = err.response?.data?.message || t("Failed to retrieve download link.");
+      if (Platform.OS === "web") {
+        alert(`${t("Error")}: ${errorMsg}`);
+      } else {
+        Alert.alert(t("Error") || "Error", errorMsg);
+      }
     }
   };
 
   const handlePurchaseSingle = (imageId: string) => {
     if (walletBalance < 299) {
-      Alert.alert(
-        t("Insufficient Balance"),
-        t("You do not have enough wallet balance. Would you like to recharge?"),
-        [
-          { text: t("Cancel"), style: "cancel" },
-          { text: t("Recharge"), onPress: () => router.push("/(tabs)/wallet") }
-        ]
-      );
+      if (Platform.OS === "web") {
+        const confirmRecharge = window.confirm(t("You do not have enough wallet balance. Would you like to recharge?"));
+        if (confirmRecharge) {
+          router.push("/(tabs)/wallet");
+        }
+      } else {
+        Alert.alert(
+          t("Insufficient Balance"),
+          t("You do not have enough wallet balance. Would you like to recharge?"),
+          [
+            { text: t("Cancel"), style: "cancel" },
+            { text: t("Recharge"), onPress: () => router.push("/(tabs)/wallet") }
+          ]
+        );
+      }
       return;
     }
 
-    Alert.alert(
-      t("Confirm Purchase"),
-      t("Purchase this design option for ₹299?"),
-      [
-        { text: t("Cancel"), style: "cancel" },
-        {
-          text: t("Buy Now"),
-          onPress: async () => {
-            try {
-              await purchaseMutation.mutateAsync([imageId]);
-              refetch();
-              Alert.alert(t("Success"), t("Design purchased successfully! High-resolution download is unlocked."));
-            } catch (err: any) {
-              Alert.alert(t("Purchase Failed"), err.response?.data?.message || t("Something went wrong."));
-            }
-          }
+    const performSinglePurchase = async () => {
+      try {
+        await purchaseMutation.mutateAsync([imageId]);
+        refetch();
+        if (Platform.OS === "web") {
+          alert(t("Design purchased successfully! High-resolution download is unlocked."));
+        } else {
+          Alert.alert(t("Success"), t("Design purchased successfully! High-resolution download is unlocked."));
         }
-      ]
-    );
+      } catch (err: any) {
+        const errorMsg = err.response?.data?.message || t("Something went wrong.");
+        if (Platform.OS === "web") {
+          alert(`${t("Purchase Failed")}: ${errorMsg}`);
+        } else {
+          Alert.alert(t("Purchase Failed"), errorMsg);
+        }
+      }
+    };
+
+    if (Platform.OS === "web") {
+      const confirmBuy = window.confirm(t("Purchase this design option for ₹299?"));
+      if (confirmBuy) {
+        performSinglePurchase();
+      }
+    } else {
+      Alert.alert(
+        t("Confirm Purchase"),
+        t("Purchase this design option for ₹299?"),
+        [
+          { text: t("Cancel"), style: "cancel" },
+          {
+            text: t("Buy Now"),
+            onPress: performSinglePurchase,
+          }
+        ]
+      );
+    }
   };
 
   const handleCheckoutSelected = () => {
     const totalCost = selectedImages.size * 299;
     if (walletBalance < totalCost) {
-      Alert.alert(
-        t("Insufficient Balance"),
-        t("You need ₹${totalCost} but only have ₹${walletBalance}. Would you like to recharge?").replace("${totalCost}", String(totalCost)).replace("${walletBalance}", String(walletBalance)),
-        [
-          { text: t("Cancel"), style: "cancel" },
-          { text: t("Recharge"), onPress: () => router.push("/(tabs)/wallet") }
-        ]
-      );
+      if (Platform.OS === "web") {
+        const confirmRecharge = window.confirm(
+          t("You need ₹${totalCost} but only have ₹${walletBalance}. Would you like to recharge?")
+            .replace("${totalCost}", String(totalCost))
+            .replace("${walletBalance}", String(walletBalance))
+        );
+        if (confirmRecharge) {
+          router.push("/(tabs)/wallet");
+        }
+      } else {
+        Alert.alert(
+          t("Insufficient Balance"),
+          t("You need ₹${totalCost} but only have ₹${walletBalance}. Would you like to recharge?").replace("${totalCost}", String(totalCost)).replace("${walletBalance}", String(walletBalance)),
+          [
+            { text: t("Cancel"), style: "cancel" },
+            { text: t("Recharge"), onPress: () => router.push("/(tabs)/wallet") }
+          ]
+        );
+      }
       return;
     }
 
-    Alert.alert(
-      t("Confirm Purchase"),
-      t("Purchase ${selectedImages.size} selected design(s) for ₹${totalCost}?").replace("${selectedImages.size}", String(selectedImages.size)).replace("${totalCost}", String(totalCost)),
-      [
-        { text: t("Cancel"), style: "cancel" },
-        {
-          text: t("Confirm & Buy"),
-          onPress: async () => {
-            try {
-              const idsArray = Array.from(selectedImages);
-              await purchaseMutation.mutateAsync(idsArray);
-              setSelectedImages(new Set());
-              refetch();
-              Alert.alert(t("Success"), t("All selected designs purchased successfully!"));
-            } catch (err: any) {
-              Alert.alert(t("Purchase Failed"), err.response?.data?.message || t("Something went wrong."));
-            }
-          }
+    const performCheckout = async () => {
+      try {
+        const idsArray = Array.from(selectedImages);
+        await purchaseMutation.mutateAsync(idsArray);
+        setSelectedImages(new Set());
+        refetch();
+        if (Platform.OS === "web") {
+          alert(t("All selected designs purchased successfully!"));
+        } else {
+          Alert.alert(t("Success"), t("All selected designs purchased successfully!"));
         }
-      ]
-    );
+      } catch (err: any) {
+        const errorMsg = err.response?.data?.message || t("Something went wrong.");
+        if (Platform.OS === "web") {
+          alert(`${t("Purchase Failed")}: ${errorMsg}`);
+        } else {
+          Alert.alert(t("Purchase Failed"), errorMsg);
+        }
+      }
+    };
+
+    if (Platform.OS === "web") {
+      const confirmBuy = window.confirm(
+        t("Purchase ${selectedImages.size} selected design(s) for ₹${totalCost}?")
+          .replace("${selectedImages.size}", String(selectedImages.size))
+          .replace("${totalCost}", String(totalCost))
+      );
+      if (confirmBuy) {
+        performCheckout();
+      }
+    } else {
+      Alert.alert(
+        t("Confirm Purchase"),
+        t("Purchase ${selectedImages.size} selected design(s) for ₹${totalCost}?").replace("${selectedImages.size}", String(selectedImages.size)).replace("${totalCost}", String(totalCost)),
+        [
+          { text: t("Cancel"), style: "cancel" },
+          {
+            text: t("Confirm & Buy"),
+            onPress: performCheckout,
+          }
+        ]
+      );
+    }
   };
 
   if (designId && isLoading) {
@@ -268,9 +336,9 @@ export default function ResultScreen() {
                       <Heart size={16} color={isFav ? COLORS.primary : COLORS.textMuted} fill={isFav ? COLORS.primary : "transparent"} />
                     </TouchableOpacity>
 
-                    <TouchableOpacity style={styles.iconBtn}>
-                      <Bookmark size={16} color={COLORS.textMuted} />
-                    </TouchableOpacity>
+                      {/* <TouchableOpacity style={styles.iconBtn}>
+                        <Bookmark size={16} color={COLORS.textMuted} />
+                      </TouchableOpacity> */}
 
                     <TouchableOpacity onPress={() => handleShare(d.title)} style={styles.iconBtn}>
                       <Share2 size={16} color={COLORS.textMuted} />

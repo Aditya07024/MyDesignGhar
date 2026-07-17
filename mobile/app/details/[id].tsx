@@ -30,21 +30,46 @@ export default function DesignDetailScreen() {
   const deleteMutation = useDeleteDesignMutation();
   const { data: walletBalance = 0 } = useWalletBalanceQuery();
 
+  const [activeImageIndex, setActiveImageIndex] = React.useState(0);
+
   const d = React.useMemo(() => {
     if (realDesign) {
-      const firstImage = realDesign.images?.[0];
+      const activeImage = realDesign.images?.[activeImageIndex] || realDesign.images?.[0];
       return {
         id: realDesign.id,
         title: `${realDesign.style} ${realDesign.roomType}`,
         style: realDesign.style,
         room: realDesign.roomType,
         beforeSeed: realDesign.beforeUrl || "",
-        afterSeed: firstImage ? firstImage.previewUrl : "",
-        purchased: firstImage ? firstImage.purchased : false,
+        afterSeed: activeImage ? activeImage.previewUrl : "",
+        purchased: activeImage ? activeImage.purchased : false,
+        hasMultipleOptions: realDesign.images && realDesign.images.length > 1,
+        options: realDesign.images || [],
       };
     }
-    return designs.find((x) => x.id === id);
-  }, [realDesign, id]);
+    const mockDesign = designs.find((x) => x.id === id);
+    if (mockDesign) {
+      // Mock 3 options for mock designs to support previewing options cleanly
+      const mockOptions = [
+        { id: `${mockDesign.id}-opt1`, previewUrl: mockDesign.afterSeed, purchased: mockDesign.purchased },
+        { id: `${mockDesign.id}-opt2`, previewUrl: "room-a", purchased: false },
+        { id: `${mockDesign.id}-opt3`, previewUrl: "room-b", purchased: true },
+      ];
+      const activeOption = mockOptions[activeImageIndex] || mockOptions[0];
+      return {
+        id: mockDesign.id,
+        title: mockDesign.title,
+        style: mockDesign.style,
+        room: mockDesign.room,
+        beforeSeed: mockDesign.beforeSeed,
+        afterSeed: activeOption.previewUrl,
+        purchased: activeOption.purchased,
+        hasMultipleOptions: true,
+        options: mockOptions,
+      };
+    }
+    return null;
+  }, [realDesign, id, activeImageIndex]);
 
   if (isLoading || deleteMutation.isPending) {
     return (
@@ -86,64 +111,70 @@ export default function DesignDetailScreen() {
 
   const handleDownload = () => {
     if (d.purchased) {
-      const firstImage = realDesign?.images?.[0];
-      if (firstImage) {
-        DesignService.getDownloadUrl(firstImage.id)
-          .then((res) => {
-            if (Platform.OS === "web") {
-              window.open(res.downloadUrl, "_blank");
-            } else {
-              Alert.alert(
-                "Download Link Ready",
-                `High-res image is ready! Copy the link to open in your browser:\n\n${res.downloadUrl}`,
-                [{ text: "Close" }]
-              );
-            }
-          })
-          .catch((err) => {
-            Alert.alert("Error", err.response?.data?.message || "Failed to retrieve download link.");
-          });
+      if (realDesign) {
+        const activeImage = realDesign.images?.[activeImageIndex] || realDesign.images?.[0];
+        if (activeImage) {
+          DesignService.getDownloadUrl(activeImage.id)
+            .then((res) => {
+              if (Platform.OS === "web") {
+                window.open(res.downloadUrl, "_blank");
+              } else {
+                Alert.alert(
+                  "Download Link Ready",
+                  `High-res image is ready! Copy the link to open in your browser:\n\n${res.downloadUrl}`,
+                  [{ text: "Close" }]
+                );
+              }
+            })
+            .catch((err) => {
+              Alert.alert("Error", err.response?.data?.message || "Failed to retrieve download link.");
+            });
+        }
       } else {
         Alert.alert("Success", "HD design saved to your photo gallery.");
       }
     } else {
-      const firstImage = realDesign?.images?.[0];
-      if (!firstImage) {
-        Alert.alert("Error", "No image found to purchase.");
-        return;
-      }
+      if (realDesign) {
+        const activeImage = realDesign.images?.[activeImageIndex] || realDesign.images?.[0];
+        if (!activeImage) {
+          Alert.alert("Error", "No image found to purchase.");
+          return;
+        }
 
-      if (walletBalance < 299) {
+        if (walletBalance < 299) {
+          Alert.alert(
+            "Insufficient Balance",
+            "You do not have enough wallet balance. Would you like to recharge?",
+            [
+              { text: "Cancel", style: "cancel" },
+              { text: "Recharge", onPress: () => router.push("/(tabs)/wallet") }
+            ]
+          );
+          return;
+        }
+
+        if (Platform.OS === "web") {
+          const confirmBuy = window.confirm("Purchase this design option for ₹299 from your wallet?");
+          if (confirmBuy) {
+            performPurchase(activeImage.id);
+          }
+          return;
+        }
+
         Alert.alert(
-          "Insufficient Balance",
-          "You do not have enough wallet balance. Would you like to recharge?",
+          "Purchase HD Design",
+          "Get high-resolution, watermark-free render files for ₹299. The cost will be debited from your wallet.",
           [
             { text: "Cancel", style: "cancel" },
-            { text: "Recharge", onPress: () => router.push("/(tabs)/wallet") }
+            {
+              text: "Confirm & Buy",
+              onPress: () => performPurchase(activeImage.id),
+            },
           ]
         );
-        return;
+      } else {
+        Alert.alert("Success", "HD design saved to your photo gallery.");
       }
-
-      if (Platform.OS === "web") {
-        const confirmBuy = window.confirm("Purchase this design option for ₹299 from your wallet?");
-        if (confirmBuy) {
-          performPurchase(firstImage.id);
-        }
-        return;
-      }
-
-      Alert.alert(
-        "Purchase HD Design",
-        "Get high-resolution, watermark-free render files for ₹299. The cost will be debited from your wallet.",
-        [
-          { text: "Cancel", style: "cancel" },
-          {
-            text: "Confirm & Buy",
-            onPress: () => performPurchase(firstImage.id),
-          },
-        ]
-      );
     }
   };
 
@@ -182,6 +213,26 @@ export default function DesignDetailScreen() {
             <Heart size={20} color={isFav ? COLORS.primary : COLORS.textMuted} fill={isFav ? COLORS.primary : "transparent"} />
           </TouchableOpacity>
         </View>
+
+        {/* Option Tabs */}
+        {d && d.hasMultipleOptions && (
+          <View style={styles.tabsContainer}>
+            {d.options.map((opt: any, idx: number) => {
+              const isActive = idx === activeImageIndex;
+              return (
+                <TouchableOpacity
+                  key={opt.id}
+                  style={[styles.tabButton, isActive && styles.tabButtonActive]}
+                  onPress={() => setActiveImageIndex(idx)}
+                >
+                  <Text style={[styles.tabText, isActive && styles.tabTextActive]}>
+                    Option {idx + 1}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        )}
 
         {/* Large Main Render */}
         <View style={styles.imageContainer}>
@@ -289,6 +340,33 @@ const getStyles = (theme: "light" | "dark") => StyleSheet.create({
   scrollContent: {
     padding: 20,
     paddingBottom: 40,
+  },
+  tabsContainer: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 20,
+  },
+  tabButton: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: COLORS.border,
+    backgroundColor: COLORS.card,
+  },
+  tabButtonActive: {
+    borderColor: COLORS.primary,
+    backgroundColor: COLORS.primary,
+  },
+  tabText: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: COLORS.textMuted,
+  },
+  tabTextActive: {
+    color: "#12141a",
   },
   header: {
     flexDirection: "row",
