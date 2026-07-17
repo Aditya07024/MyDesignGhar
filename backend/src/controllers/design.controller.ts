@@ -9,6 +9,11 @@ import { logger } from "../utils/logger";
 import { NotificationService } from "../services/notification.service";
 import crypto from "crypto";
 
+const resolveUrl = (url: string) => {
+  if (!url) return url;
+  return url.replace(/^https?:\/\/[^\/]+/, env.BACKEND_URL);
+};
+
 export class DesignController {
   /**
    * Generate 3 AI designs based on upload
@@ -233,8 +238,8 @@ export class DesignController {
           beforeUrl: `${env.BACKEND_URL}/uploads/previews/${design.id}/before.jpg`,
           images: uploadedImages.map((img) => ({
             id: img.id,
-            previewUrl: img.previewUrl,
-            thumbnailUrl: img.thumbnailUrl,
+            previewUrl: resolveUrl(img.previewUrl),
+            thumbnailUrl: resolveUrl(img.thumbnailUrl),
           })),
         },
       });
@@ -275,8 +280,8 @@ export class DesignController {
           createdAt: d.createdAt,
           images: d.images.map((img: any) => ({
             id: img.id,
-            previewUrl: img.previewUrl,
-            thumbnailUrl: img.thumbnailUrl,
+            previewUrl: resolveUrl(img.previewUrl),
+            thumbnailUrl: resolveUrl(img.thumbnailUrl),
           })),
           purchased: true, // User owns these designs, so they are unlocked
         })),
@@ -319,9 +324,9 @@ export class DesignController {
           beforeUrl: `${env.BACKEND_URL}/uploads/previews/${design.id}/before.jpg`,
           images: design.images.map((img: any) => ({
             id: img.id,
-            previewUrl: img.previewUrl,
-            thumbnailUrl: img.thumbnailUrl,
-            depthMapUrl: img.depthMapUrl,
+            previewUrl: resolveUrl(img.previewUrl),
+            thumbnailUrl: resolveUrl(img.thumbnailUrl),
+            depthMapUrl: img.depthMapUrl ? resolveUrl(img.depthMapUrl) : null,
             purchased: hasPurchasedWhole || design.purchases.some((p: any) => p.designImageId === img.id),
           })),
         },
