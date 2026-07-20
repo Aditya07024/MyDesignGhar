@@ -15,6 +15,8 @@ import {
   TouchableOpacity,
   View,
   Alert,
+  Modal,
+  ActivityIndicator,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { DesignCard } from "@/components/DesignCard";
@@ -55,6 +57,13 @@ export default function HomeScreen() {
 
   const [clientBookings, setClientBookings] = useState<any[]>([]);
   const [loadingBookings, setLoadingBookings] = useState(false);
+
+  // Review Modal States
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewText, setReviewText] = useState("");
+  const [reviewConsultantId, setReviewConsultantId] = useState<string | null>(null);
+  const [reviewLoading, setReviewLoading] = useState(false);
 
   useEffect(() => {
     if (user && user.role !== "CONSULTANT") {
@@ -157,14 +166,14 @@ export default function HomeScreen() {
       </LinearGradient>
 
       <View style={styles.content}>
-        {/* Client Confirmed Bookings / VC option */}
-        {clientBookings.filter((b) => b.status === "CONFIRMED").length > 0 && (
+        {/* Client Bookings / VC & Review option */}
+        {clientBookings.filter((b) => b.status === "CONFIRMED" || b.status === "COMPLETED").length > 0 && (
           <View style={{ marginBottom: 20 }}>
             <Text style={{ fontSize: 16, fontWeight: "700", fontFamily: "Inter_700Bold", color: colors.foreground, marginBottom: 10 }}>
-              {t("Upcoming Consultations")}
+              {t("My Consultations")}
             </Text>
             {clientBookings
-              .filter((b) => b.status === "CONFIRMED")
+              .filter((b) => b.status === "CONFIRMED" || b.status === "COMPLETED")
               .map((booking) => (
                 <View
                   key={booking.id}
@@ -190,33 +199,64 @@ export default function HomeScreen() {
                         {new Date(booking.date).toLocaleDateString()} @ {booking.time}
                       </Text>
                     </View>
-                    <View style={{ backgroundColor: colors.success + "15", paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}>
-                      <Text style={{ fontSize: 10, fontWeight: "700", color: colors.success }}>{booking.status}</Text>
+                    <View style={{ backgroundColor: booking.status === "CONFIRMED" ? colors.success + "15" : colors.muted, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}>
+                      <Text style={{ fontSize: 10, fontWeight: "700", color: booking.status === "CONFIRMED" ? colors.success : colors.mutedForeground }}>{booking.status}</Text>
                     </View>
                   </View>
 
-                  <Pressable
-                    onPress={() => {
-                      Alert.alert(
-                        t("Video Consultation"),
-                        t("Please open the video consultation room link on your registered email or browser to join the LiveKit call.")
-                      );
-                    }}
-                    style={{
-                      backgroundColor: colors.primary,
-                      borderRadius: 8,
-                      paddingVertical: 10,
-                      flexDirection: "row",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: 8,
-                    }}
-                  >
-                    <Feather name="video" size={14} color="#fff" />
-                    <Text style={{ color: "#fff", fontSize: 13, fontWeight: "600", fontFamily: "Inter_600SemiBold" }}>
-                      {t("Join Video Call")}
-                    </Text>
-                  </Pressable>
+                  <View style={{ flexDirection: "row", gap: 10 }}>
+                    {booking.status === "CONFIRMED" && (
+                      <Pressable
+                        onPress={() => {
+                          Alert.alert(
+                            t("Video Consultation"),
+                            t("Please open the video consultation room link on your registered email or browser to join the LiveKit call.")
+                          );
+                        }}
+                        style={{
+                          flex: 1,
+                          backgroundColor: colors.primary,
+                          borderRadius: 8,
+                          paddingVertical: 10,
+                          flexDirection: "row",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: 8,
+                        }}
+                      >
+                        <Feather name="video" size={14} color="#fff" />
+                        <Text style={{ color: "#fff", fontSize: 13, fontWeight: "600", fontFamily: "Inter_600SemiBold" }}>
+                          {t("Join Call")}
+                        </Text>
+                      </Pressable>
+                    )}
+
+                    <Pressable
+                      onPress={() => {
+                        setReviewConsultantId(booking.consultantId);
+                        setReviewRating(5);
+                        setReviewText("");
+                        setShowReviewModal(true);
+                      }}
+                      style={{
+                        flex: 1,
+                        backgroundColor: colors.card,
+                        borderWidth: 1,
+                        borderColor: colors.border,
+                        borderRadius: 8,
+                        paddingVertical: 10,
+                        flexDirection: "row",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 8,
+                      }}
+                    >
+                      <Ionicons name="star" size={14} color="#FFD700" />
+                      <Text style={{ color: colors.foreground, fontSize: 13, fontWeight: "600", fontFamily: "Inter_600SemiBold" }}>
+                        {t("Rate & Review")}
+                      </Text>
+                    </Pressable>
+                  </View>
                 </View>
               ))}
           </View>
@@ -282,43 +322,6 @@ export default function HomeScreen() {
             </Pressable>
           ))}
         </View>
-{/* 
-        <View style={[styles.sectionHeader, { marginTop: 28 }]}>
-          <Text style={[styles.sectionTitle, { color: colors.foreground, marginTop: 0 }]}>{t("Recent Designs")}</Text>
-          {recentDesigns.length > 0 && (
-            <Pressable onPress={() => router.push("/(tabs)/designs")}>
-              <Text style={[styles.seeAll, { color: colors.primary }]}>{t("See all")}</Text>
-            </Pressable>
-          )}
-        </View>
-
-        {recentDesigns.length === 0 ? (
-          <Pressable
-            onPress={handleCapture}
-            style={[styles.emptyCard, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: colors.radius }]}
-          >
-            <View style={[styles.emptyIcon, { backgroundColor: colors.primary + "15" }]}>
-              <Feather name="camera" size={36} color={colors.primary} />
-            </View>
-            <Text style={[styles.emptyTitle, { color: colors.foreground }]}>{t("Create Your First Design")}</Text>
-            <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>
-              {t("Take a photo of any room and let AI redesign it in multiple styles")}
-            </Text>
-          </Pressable>
-        ) : (
-          <View style={styles.designGrid}>
-            {recentDesigns.map((d) => (
-              <View key={d.id} style={styles.designGridItem}>
-                <DesignCard
-                  design={d}
-                  onPress={() => router.push({ pathname: "/results", params: { designId: d.id } })}
-                  onFavorite={() => toggleFavorite(d.id)}
-                  onDelete={() => deleteDesign(d.id)}
-                />
-              </View>
-            ))}
-          </View>
-        )} */}
 
         <Pressable
           onPress={() => router.push("/challenge")}

@@ -650,37 +650,6 @@ export class ConsultantController {
           skipDuplicates: true,
         });
       }
-
-      const reviewsCount = await prisma.consultantReview.count({
-        where: { consultantId },
-      });
-
-      if (reviewsCount === 0) {
-        let anyUser = await prisma.user.findFirst({
-          where: { role: Role.USER },
-        });
-        if (!anyUser) {
-          anyUser = await prisma.user.findFirst();
-        }
-        if (anyUser) {
-          await prisma.consultantReview.createMany({
-            data: [
-              {
-                consultantId,
-                userId: anyUser.id,
-                rating: 5,
-                text: "Excellent design inputs! Transformed our living room completely with modern elements.",
-              },
-              {
-                consultantId,
-                userId: anyUser.id,
-                rating: 4,
-                text: "Very professional and understands space utilization perfectly.",
-              },
-            ],
-          });
-        }
-      }
     } catch (err: any) {
       logger.error(`Error in ensureAvailabilityAndReviews: ${err.message}`);
     }

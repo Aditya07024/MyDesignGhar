@@ -41,6 +41,7 @@ export function DesignerDashboard() {
   const [experience, setExperience] = useState("");
   const [bio, setBio] = useState("");
   const [price, setPrice] = useState("500");
+  const [portfolioUrl, setPortfolioUrl] = useState("");
   const [regLoading, setRegLoading] = useState(false);
 
   // Add Slot Modal States
@@ -110,11 +111,13 @@ export function DesignerDashboard() {
 
     setRegLoading(true);
     try {
+      const portfolioUrls = portfolioUrl.trim() ? [portfolioUrl.trim()] : undefined;
       await ConsultantService.register({
         specialty,
         experience: expNum,
         bio,
         price: priceNum,
+        portfolioUrls,
       });
       // Retrieve full updated user model from backend
       const meRes = await AuthService.getMe();
@@ -222,6 +225,15 @@ export function DesignerDashboard() {
               placeholder={t("Describe your style philosophy, certifications, or past projects...")}
               placeholderTextColor={colors.mutedForeground}
               style={[styles.input, styles.textArea, { borderColor: colors.border, color: colors.foreground, backgroundColor: colors.background }]}
+            />
+
+            <Text style={[styles.label, { color: colors.foreground }]}>{t("Portfolio Image URL (Optional)")}</Text>
+            <TextInput
+              value={portfolioUrl}
+              onChangeText={setPortfolioUrl}
+              placeholder="e.g. https://images.unsplash.com/photo-1586023492125-27b2c045efd7"
+              placeholderTextColor={colors.mutedForeground}
+              style={[styles.input, { borderColor: colors.border, color: colors.foreground, backgroundColor: colors.background }]}
             />
 
             <GradientButton
