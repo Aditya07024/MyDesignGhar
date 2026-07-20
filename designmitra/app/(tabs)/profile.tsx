@@ -80,6 +80,7 @@ export default function ProfileScreen() {
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editName, setEditName] = useState(user?.name || "");
   const [editPhone, setEditPhone] = useState(user?.phone || "");
+  const [editCity, setEditCity] = useState(user?.city || "");
   const [updatingProfile, setUpdatingProfile] = useState(false);
   const [profileError, setProfileError] = useState("");
 
@@ -190,6 +191,7 @@ export default function ProfileScreen() {
     if (label === "Personal Details") {
       setEditName(user?.name || "");
       setEditPhone(user?.phone || "");
+      setEditCity(user?.city || "");
       setProfileError("");
       setEditModalVisible(true);
     } else if (label === "Language") {
@@ -230,11 +232,13 @@ export default function ProfileScreen() {
       await AuthService.updateProfile({
         fullName: editName.trim(),
         phone: editPhone.trim() || undefined,
+        city: editCity.trim() || undefined,
       });
 
       updateProfile({
         name: editName.trim(),
         phone: editPhone.trim() || undefined,
+        city: editCity.trim() || undefined,
       });
 
       setEditModalVisible(false);
@@ -521,6 +525,15 @@ export default function ProfileScreen() {
               placeholder="e.g. +919999999999"
               placeholderTextColor={colors.mutedForeground}
               keyboardType="phone-pad"
+              style={[styles.modalInput, { borderColor: colors.border, color: colors.foreground, backgroundColor: colors.card, borderRadius: colors.radius - 4 }]}
+            />
+
+            <Text style={[styles.modalLabel, { color: colors.foreground, marginTop: 16 }]}>{t("City")}</Text>
+            <TextInput
+              value={editCity}
+              onChangeText={setEditCity}
+              placeholder="e.g. Mumbai"
+              placeholderTextColor={colors.mutedForeground}
               style={[styles.modalInput, { borderColor: colors.border, color: colors.foreground, backgroundColor: colors.card, borderRadius: colors.radius - 4 }]}
             />
 

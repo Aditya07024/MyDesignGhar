@@ -95,6 +95,7 @@ export class AuthController {
           email: activeUser.email,
           role: activeUser.role,
           fullName: activeUser.profile?.fullName || "User",
+          city: activeUser.profile?.city || undefined,
           walletBalance: activeUser.wallet?.balance || 0,
           referralCode: activeUser.referralCode,
           isPhoneVerified: activeUser.isPhoneVerified,
@@ -157,6 +158,7 @@ export class AuthController {
           email: user.email,
           role: user.role,
           fullName: user.profile?.fullName || "User",
+          city: user.profile?.city || undefined,
           walletBalance: user.wallet?.balance || 0,
           referralCode: user.referralCode,
           isPhoneVerified: user.isPhoneVerified,
@@ -194,8 +196,8 @@ export class AuthController {
   static async updateProfile(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     try {
       const userId = req.user!.id;
-      const { fullName, phone, bio, avatarUrl } = req.body;
-
+      const { fullName, phone, bio, avatarUrl, city } = req.body;
+      
       if (phone) {
         const existing = await prisma.user.findFirst({
           where: {
@@ -219,6 +221,7 @@ export class AuthController {
           fullName,
           bio,
           avatarUrl,
+          city,
         },
       });
 

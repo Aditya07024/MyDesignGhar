@@ -20,13 +20,14 @@ import { DesignService } from "../../lib/api/services";
 import { useTranslation } from "../../lib/i18n";
 
 import { resolveImageUri } from "../../lib/api/client";
+import { DesignPlaceholder } from "../../components/DesignPlaceholder";
 
 const STYLE_FILTERS = ["All", "Modern", "Traditional", "Minimal", "Bohemian", "Rustic"];
 const ROOM_FILTERS = ["All", "Bedroom", "Living", "Kitchen", "Bathroom"];
 
 const DEFAULT_COMMUNITY_DESIGNS = [
-  { id: "1", user: "Priya M", city: "Mumbai", likes: 243, style: "Modern", room: "Living Room", color: "#FF6B35", imageUri: "" },
-  { id: "2", user: "Raj K", city: "Bengaluru", likes: 189, style: "Minimal", room: "Bedroom", color: "#004E89", imageUri: "" },
+  { id: "1", user: "Rajesh K", city: "Mumbai", likes: 245, style: "Modern", room: "Living Room", color: "#004E89", imageUri: "" },
+  { id: "2", user: "Priya M", city: "Bangalore", likes: 189, style: "Minimal", room: "Bedroom", color: "#FF6B35", imageUri: "" },
   { id: "3", user: "Anjali S", city: "Jaipur", likes: 412, style: "Traditional", room: "Kitchen", color: "#F7B32B", imageUri: "" },
   { id: "4", user: "Vikram P", city: "Delhi", likes: 97, style: "Industrial", room: "Living Room", color: "#4CAF50", imageUri: "" },
   { id: "5", user: "Meera R", city: "Chennai", likes: 338, style: "Bohemian", room: "Bedroom", color: "#E53935", imageUri: "" },
@@ -39,72 +40,6 @@ const DEFAULT_TRENDING = [
   { id: "t3", name: "Mumbai Minimalist", count: "2.1K designs", color: "#E3F2FD" },
   { id: "t4", name: "Rajasthani Royal", count: "674 designs", color: "#FFF8E1" },
 ];
-
-interface DesignPlaceholderProps {
-  id: string;
-  color: string;
-  user: string;
-  city: string;
-  likes: number;
-  style: string;
-  room: string;
-  imageUri?: string;
-}
-
-function DesignPlaceholder({ id, color, user, city, likes, style, room, imageUri }: DesignPlaceholderProps) {
-  const colors = useColors();
-  const { t } = useTranslation();
-  const [liked, setLiked] = useState(false);
-  const [likeCount, setLikeCount] = useState(likes);
-
-  async function handleLike() {
-    setLiked((v) => !v);
-    setLikeCount((n) => liked ? n - 1 : n + 1);
-    try {
-      if (id && id.length > 5) {
-        await DesignService.likeChallengeEntry(id);
-      }
-    } catch (err) {
-      console.warn("Failed to like design:", err);
-    }
-  }
-
-  return (
-    <Pressable style={[styles.communityCard, { backgroundColor: colors.card, borderColor: colors.border, borderRadius: colors.radius }]}>
-      <View style={styles.communityImage}>
-        {imageUri ? (
-          <Image source={{ uri: imageUri }} style={StyleSheet.absoluteFill} />
-        ) : (
-          <LinearGradient
-            colors={[color, color + "88"]}
-            style={StyleSheet.absoluteFill}
-          />
-        )}
-        <View style={styles.styleTag}>
-          <Text style={styles.styleTagText}>{style}</Text>
-        </View>
-        <Pressable onPress={handleLike} style={styles.heartBtn}>
-          <Ionicons name={liked ? "heart" : "heart-outline"} size={18} color={liked ? "#E53935" : "#fff"} />
-        </Pressable>
-      </View>
-      <View style={styles.communityInfo}>
-        <View style={styles.avatarRow}>
-          <View style={[styles.avatar, { backgroundColor: color }]}>
-            <Text style={styles.avatarText}>{user ? user[0] : "U"}</Text>
-          </View>
-          <View>
-            <Text style={[styles.communityUser, { color: colors.foreground }]} numberOfLines={1}>{city}</Text>
-            {/* <Text style={[styles.communityCity, { color: colors.mutedForeground }]} numberOfLines={1}>{city}</Text> */}
-          </View>
-        </View>
-        <View style={styles.likeRow}>
-          <Ionicons name="heart" size={13} color="#E53935" />
-          <Text style={[styles.likeCount, { color: colors.mutedForeground }]}>{likeCount}</Text>
-        </View>
-      </View>
-    </Pressable>
-  );
-}
 
 export default function ExploreScreen() {
   const colors = useColors();
