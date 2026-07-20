@@ -9,7 +9,7 @@ const translationCache = new Map<string, string>();
  */
 export async function translateText(text: string, targetLang: string): Promise<string> {
   if (!text || typeof text !== "string") return text;
-  if (!targetLang || targetLang === "en" || targetLang === "undefined") return text;
+  if (!targetLang || targetLang.startsWith("en") || targetLang === "undefined") return text;
 
   const cleanText = text.trim();
   if (!cleanText) return text;
@@ -52,7 +52,7 @@ const EXCLUDED_KEYS = new Set([
  * Recursively walk an object/array and translate all string values of non-excluded keys
  */
 export async function translateObject(obj: any, targetLang: string): Promise<any> {
-  if (!targetLang || targetLang === "en" || targetLang === "undefined") return obj;
+  if (!targetLang || targetLang.startsWith("en") || targetLang === "undefined") return obj;
   if (obj === null || obj === undefined) return obj;
 
   if (Array.isArray(obj)) {

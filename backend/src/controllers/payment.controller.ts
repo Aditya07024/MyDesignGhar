@@ -62,12 +62,76 @@ export class PaymentController {
    */
   static async verifyPayment(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     try {
-      const { orderId, paymentId, signature, purchaseId, isWalletTopUp, amount } = req.body;
+      const { orderId, paymentId, signature, purchaseId, isWalletTopUp, amount, bookingId } = req.body;
       const userId = req.user!.id;
 
       const isValid = PaymentService.verifyPaymentSignature(orderId, paymentId, signature);
       if (!isValid) {
         return res.status(400).json({ message: "Invalid payment signature" });
+      }
+
+      if (bookingId) {
+        const existingBooking = await prisma.consultationBooking.findUnique({
+          where: { id: bookingId },
+          include: {
+            availability: {
+              include: {
+                consultant: {
+                  include: {
+                    user: {
+                      select: {
+                        profile: { select: { fullName: true } }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        });
+
+        if (!existingBooking) {
+          return res.status(404).json({ message: "Booking not found" });
+        }
+
+        if (existingBooking.status === "PENDING") {
+          await prisma.$transaction(async (tx) => {
+            await tx.consultationBooking.update({
+              where: { id: bookingId },
+              data: {
+                status: BookingStatus.CONFIRMED,
+                razorpayPaymentId: paymentId,
+              },
+            });
+
+            await tx.consultantAvailability.update({
+              where: { id: existingBooking.availabilityId },
+              data: { isBooked: true },
+            });
+          });
+
+          try {
+            await NotificationService.sendNotification(
+              userId,
+              "Consultation Confirmed",
+              `Your consultation with ${existingBooking.availability?.consultant?.user?.profile?.fullName || "Designer"} is confirmed at ${existingBooking.availability?.timeSlot} on ${new Date(existingBooking.availability?.date).toDateString()}`,
+              "reminder"
+            );
+
+            if (existingBooking.availability?.consultant?.userId) {
+              await NotificationService.sendNotification(
+                existingBooking.availability.consultant.userId,
+                "New Session Booked",
+                `You have a new video consultation booked at ${existingBooking.availability.timeSlot} on ${new Date(existingBooking.availability.date).toDateString()}`,
+                "reminder"
+              );
+            }
+          } catch (nErr: any) {
+            logger.error(`Notification trigger failed for direct booking payment: ${nErr.message}`);
+          }
+        }
+
+        return res.json({ message: "Payment verified successfully and booking confirmed" });
       }
 
       if (isWalletTopUp) {

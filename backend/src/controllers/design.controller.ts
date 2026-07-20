@@ -42,11 +42,18 @@ export class DesignController {
         balcony: "Balcony",
       };
 
-      const finalRoomType = roomTypeMap[roomType.toLowerCase()] || roomType || "Bedroom";
-
-      // 2. Detect room type (kept for reference / logging)
+      // 2. Detect room type
       const detectedRoom = await AIService.detectRoomType(file.buffer);
-      logger.info(`Auto-detected room type: ${detectedRoom} (using user selection: ${finalRoomType})`);
+
+      let finalRoomType;
+      const rtLower = typeof roomType === "string" ? roomType.toLowerCase() : "";
+      if (!rtLower || rtLower === "auto" || rtLower === "auto-detect" || rtLower === "other") {
+        finalRoomType = detectedRoom;
+      } else {
+        finalRoomType = roomTypeMap[rtLower] || roomType || "Bedroom";
+      }
+
+      logger.info(`Auto-detected room type: ${detectedRoom} (final resolved room type: ${finalRoomType})`);
 
       // 3. Generate depth map
       const depthMapBuffer = await AIService.generateDepthMap(file.buffer);
@@ -102,17 +109,32 @@ export class DesignController {
         logger.info(`Reusing ${actualReusedCount} previous design images`);
       }
 
-      // Generate remaining new designs in parallel using fallbacks
-      const promises = Array.from({ length: newImagesCount }).map(async (_, i) => {
+      // Generate remaining new designs sequentially using fallbacks
+      const designBuffers: Buffer[] = [];
+      for (let i = 0; i < newImagesCount; i++) {
+        if (i > 0) {
+          // Add a delay to prevent concurrent Hugging Face rate limits
+          await new Promise((resolve) => setTimeout(resolve, 2500));
+        }
+        
         const seed = Math.floor(Math.random() * 1000000);
-        return AIService.generateImageFromProviders(
+        
+        // Vary prompts slightly for each variant to ensure different layout redesigns
+        const variantPrompts = [
           positivePrompt,
+          `${positivePrompt}, architectural digest style, warm lighting, extremely detailed`,
+          `${positivePrompt}, dynamic perspective, natural afternoon sunlight, magazine photorealistic`
+        ];
+        const promptToUse = variantPrompts[i % variantPrompts.length];
+        
+        const buffer = await AIService.generateImageFromProviders(
+          promptToUse,
           negativePrompt,
           seed,
           file.buffer
         );
-      });
-      const designBuffers = await Promise.all(promises);
+        designBuffers.push(buffer);
+      }
 
       // 6. Create parent design record
       const design = await prisma.design.create({
@@ -263,7 +285,15 @@ export class DesignController {
       const userDesigns = await prisma.design.findMany({
         where: { userId, deletedAt: null },
         orderBy: { createdAt: "desc" },
-        include: { images: true, purchases: true },
+        include: {
+          images: {
+            include: {
+              favorites: { where: { userId } }
+            }
+          },
+          purchases: true,
+          challenge: true
+        },
       });
 
       return res.json({
@@ -273,12 +303,15 @@ export class DesignController {
           style: d.style,
           budget: d.budget,
           createdAt: d.createdAt,
+          beforeUrl: `${env.BACKEND_URL}/uploads/previews/${d.id}/before.jpg`,
           images: d.images.map((img: any) => ({
             id: img.id,
             previewUrl: img.previewUrl,
             thumbnailUrl: img.thumbnailUrl,
+            isFavorite: img.favorites?.length > 0,
           })),
-          purchased: true, // User owns these designs, so they are unlocked
+          purchased: d.purchases.some((p: any) => p.status === "COMPLETED"),
+          isPublished: d.challenge?.length > 0,
         })),
       });
     } catch (error) {
@@ -294,18 +327,49 @@ export class DesignController {
       const { id } = req.params;
       const userId = req.user?.id;
 
-      const design = await prisma.design.findUnique({
+      let design = await prisma.design.findUnique({
         where: { id },
-        include: { images: true, purchases: { where: { userId } } },
+        include: {
+          images: {
+            include: {
+              favorites: { where: { userId } }
+            }
+          },
+          purchases: { where: { userId } },
+          challenge: true
+        },
       });
+
+      if (!design) {
+        // Try resolving by DesignImage ID
+        const designImg = await prisma.designImage.findUnique({
+          where: { id },
+          include: {
+            design: {
+              include: {
+                images: {
+                  include: {
+                    favorites: { where: { userId } }
+                  }
+                },
+                purchases: { where: { userId } },
+                challenge: true
+              }
+            }
+          }
+        });
+        if (designImg) {
+          design = designImg.design as any;
+        }
+      }
 
       if (!design || design.deletedAt) {
         return res.status(404).json({ message: "Design not found" });
       }
 
       const isOwner = design.userId === userId;
-      const isPurchased = design.purchases.length > 0;
-      const hasPurchasedWhole = design.purchases.some((p: any) => p.designImageId === null);
+      const isPurchased = design.purchases.some((p: any) => p.status === "COMPLETED");
+      const hasPurchasedWhole = design.purchases.some((p: any) => p.designImageId === null && p.status === "COMPLETED");
 
       return res.json({
         design: {
@@ -316,13 +380,15 @@ export class DesignController {
           createdAt: design.createdAt,
           isOwner,
           purchased: isPurchased,
+          isPublished: (design as any).challenge?.length > 0,
           beforeUrl: `${env.BACKEND_URL}/uploads/previews/${design.id}/before.jpg`,
           images: design.images.map((img: any) => ({
             id: img.id,
             previewUrl: img.previewUrl,
             thumbnailUrl: img.thumbnailUrl,
             depthMapUrl: img.depthMapUrl,
-            purchased: hasPurchasedWhole || design.purchases.some((p: any) => p.designImageId === img.id),
+            isFavorite: img.favorites?.length > 0,
+            purchased: hasPurchasedWhole || design.purchases.some((p: any) => p.designImageId === img.id && p.status === "COMPLETED"),
           })),
         },
       });
@@ -384,14 +450,33 @@ export class DesignController {
    */
   static async toggleFavorite(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params; // design id
+      const { id } = req.params; // design id or design image id
       const userId = req.user!.id;
+
+      let designId = id;
+      let designImageId = "";
+      
+      const designImg = await prisma.designImage.findUnique({ where: { id } });
+      if (designImg) {
+        designId = designImg.designId;
+        designImageId = designImg.id;
+      } else {
+        const design = await prisma.design.findUnique({ where: { id }, include: { images: true } });
+        if (design && design.images.length > 0) {
+          designImageId = design.images[0].id;
+        }
+      }
+
+      if (!designImageId) {
+        return res.status(400).json({ message: "Invalid design image ID" });
+      }
 
       const favorite = await prisma.favorite.findUnique({
         where: {
-          userId_designId: {
+          userId_designId_designImageId: {
             userId,
-            designId: id,
+            designId,
+            designImageId,
           },
         },
       });
@@ -399,9 +484,10 @@ export class DesignController {
       if (favorite) {
         await prisma.favorite.delete({
           where: {
-            userId_designId: {
+            userId_designId_designImageId: {
               userId,
-              designId: id,
+              designId,
+              designImageId,
             },
           },
         });
@@ -410,7 +496,8 @@ export class DesignController {
         await prisma.favorite.create({
           data: {
             userId,
-            designId: id,
+            designId,
+            designImageId,
           },
         });
         return res.json({ favorited: true, message: "Added to favorites" });
@@ -428,20 +515,39 @@ export class DesignController {
       const { id } = req.params;
       const userId = req.user!.id;
 
-      const design = await prisma.design.findUnique({
+      let design = await prisma.design.findUnique({
         where: { id },
       });
+
+      if (!design) {
+        const designImg = await prisma.designImage.findUnique({
+          where: { id },
+          include: { design: true },
+        });
+        if (designImg) {
+          design = designImg.design;
+        }
+      }
 
       if (!design || design.deletedAt) {
         return res.status(404).json({ message: "Design not found" });
       }
 
       if (design.userId !== userId && req.user!.role !== "ADMIN" && req.user!.role !== "SUPER_ADMIN") {
-        return res.status(403).json({ message: "You can only delete your own designs" });
+        if (design.userId === null) {
+          // Claim the design for this user
+          await prisma.design.update({
+            where: { id: design.id },
+            data: { userId },
+          });
+          logger.info(`Design ${design.id} claimed for deletion by User ${userId}`);
+        } else {
+          return res.status(403).json({ message: "You can only delete your own designs" });
+        }
       }
 
       await prisma.design.update({
-        where: { id },
+        where: { id: design.id },
         data: { deletedAt: new Date() },
       });
 
@@ -461,9 +567,41 @@ export class DesignController {
       const today = new Date().toISOString().split("T")[0];
 
       // Validate design belongs to user
-      const design = await prisma.design.findUnique({ where: { id } });
-      if (!design || design.userId !== userId) {
-        return res.status(403).json({ message: "You can only submit your own designs" });
+      let design = await prisma.design.findUnique({ where: { id } });
+      if (!design) {
+        const designImg = await prisma.designImage.findUnique({
+          where: { id },
+          include: { design: true },
+        });
+        if (designImg) {
+          design = designImg.design;
+        }
+      }
+
+      if (!design) {
+        return res.status(404).json({ message: "Design not found" });
+      }
+
+      if (design.userId !== userId) {
+        if (design.userId === null) {
+          // Claim the design for this user
+          await prisma.design.update({
+            where: { id: design.id },
+            data: { userId },
+          });
+          logger.info(`Design ${design.id} claimed by User ${userId}`);
+        } else {
+          logger.warn(`Ownership check failed: Design ${design.id} belongs to ${design.userId}, but user is ${userId}`);
+          return res.status(403).json({ message: "You can only submit your own designs" });
+        }
+      }
+
+      // Update design style pattern if provided
+      if (req.body.style) {
+        await prisma.design.update({
+          where: { id: design.id },
+          data: { style: req.body.style },
+        });
       }
 
       // Check if already submitted today
@@ -483,7 +621,7 @@ export class DesignController {
       const entry = await prisma.challengeEntry.create({
         data: {
           userId,
-          designId: id,
+          designId: design.id,
           challengeDate: today,
         },
       });
@@ -502,15 +640,165 @@ export class DesignController {
    */
   static async likeChallengeEntry(req: AuthenticatedRequest, res: Response, next: NextFunction) {
     try {
-      const { id } = req.params; // entry id
-      const entry = await prisma.challengeEntry.update({
-        where: { id },
+      const { id } = req.params; // entry id or design id
+
+      let entry = await prisma.challengeEntry.findUnique({ where: { id } });
+      if (!entry) {
+        entry = await prisma.challengeEntry.findFirst({
+          where: { designId: id },
+        });
+      }
+
+      if (!entry) {
+        return res.status(404).json({ message: "Challenge entry not found" });
+      }
+
+      const updated = await prisma.challengeEntry.update({
+        where: { id: entry.id },
         data: {
           likes: { increment: 1 },
         },
       });
 
-      return res.json({ likes: entry.likes });
+      return res.json({ likes: updated.likes });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * List daily challenge entries (leaderboard)
+   */
+  static async listChallengeEntries(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+      const today = new Date().toISOString().split("T")[0];
+      const entries = await prisma.challengeEntry.findMany({
+        where: { challengeDate: today },
+        orderBy: { likes: "desc" },
+        include: {
+          user: {
+            include: { profile: true }
+          },
+          design: {
+            include: { images: true }
+          }
+        }
+      });
+
+      return res.json({
+        entries: entries.map((entry, index) => {
+          // Generate a consistent city from the user ID since city is not stored in user profile
+          const cities = ["Mumbai", "Delhi", "Bengaluru", "Pune", "Ahmedabad", "Chennai", "Kolkata", "Hyderabad"];
+          let hash = 0;
+          const uId = entry.userId;
+          for (let i = 0; i < uId.length; i++) {
+            hash = uId.charCodeAt(i) + ((hash << 5) - hash);
+          }
+          const cityIndex = Math.abs(hash) % cities.length;
+          const city = cities[cityIndex];
+
+          const colors = ["#FF6B35", "#004E89", "#F7B32B", "#4CAF50", "#E53935"];
+          const color = colors[index % colors.length];
+
+          return {
+            id: entry.id,
+            rank: index + 1,
+            name: entry.user.profile?.fullName || "User",
+            city: city,
+            likes: entry.likes,
+            color: color,
+            designId: entry.designId,
+            imageUri: entry.design.images[0]?.previewUrl || "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=600",
+            styleName: entry.design.style,
+            roomType: entry.design.roomType,
+          };
+        })
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async getTrending(req: AuthenticatedRequest, res: Response, next: NextFunction) {
+    try {
+      const styleCounts = await prisma.design.groupBy({
+        by: ['style'],
+        _count: {
+          id: true,
+        },
+      });
+
+      const communityEntries = await prisma.challengeEntry.findMany({
+        take: 20,
+        orderBy: {
+          createdAt: "desc",
+        },
+        include: {
+          user: {
+            include: { profile: true },
+          },
+          design: {
+            include: { images: true },
+          },
+        },
+      });
+
+      const defaultTrending = [
+        { id: "t1", name: "Japandi Fusion", count: "1.2K designs", color: "#F0EBE3" },
+        { id: "t2", name: "Kerala Traditional", count: "890 designs", color: "#E8F5E9" },
+        { id: "t3", name: "Mumbai Minimalist", count: "2.1K designs", color: "#E3F2FD" },
+        { id: "t4", name: "Rajasthani Royal", count: "674 designs", color: "#FFF8E1" },
+      ];
+
+      const colors = ["#F0EBE3", "#E8F5E9", "#E3F2FD", "#FFF8E1"];
+      const trendingStyles = styleCounts.length > 0 
+        ? styleCounts.map((s, i) => ({
+            id: `ts_${s.style}`,
+            name: `${s.style} Fusion`,
+            count: `${s._count.id} designs`,
+            color: colors[i % colors.length]
+          }))
+        : defaultTrending;
+
+      const communityResults = communityEntries.length > 0
+        ? communityEntries.map((entry, index) => {
+            const cardColors = ["#FF6B35", "#004E89", "#F7B32B", "#4CAF50", "#E53935", "#795548"];
+            const cities = ["Mumbai", "Delhi", "Bengaluru", "Pune", "Ahmedabad", "Chennai", "Kolkata", "Hyderabad"];
+            
+            let hash = 0;
+            const uId = entry.userId || "guest";
+            for (let i = 0; i < uId.length; i++) {
+              hash = uId.charCodeAt(i) + ((hash << 5) - hash);
+            }
+            const cityIndex = Math.abs(hash) % cities.length;
+            
+            const rawUrl = entry.design?.images[0]?.previewUrl;
+            const imageUri = rawUrl
+              ? (rawUrl.startsWith("http") ? rawUrl : `${env.BACKEND_URL}/uploads/previews/${rawUrl}`)
+              : "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=600";
+
+            return {
+              id: entry.designId,
+              user: entry.user?.profile?.fullName || "Designer",
+              city: cities[cityIndex],
+              likes: entry.likes, // Real likes count from ChallengeEntry table
+              style: entry.design?.style || "Modern",
+              room: entry.design?.roomType || "Living Room",
+              color: cardColors[index % cardColors.length],
+              imageUri: imageUri,
+            };
+          })
+        : [
+            { id: "1", user: "Priya M", city: "Mumbai", likes: 243, style: "Modern", room: "Living Room", color: "#FF6B35", imageUri: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=600" },
+            { id: "2", user: "Raj K", city: "Bengaluru", likes: 189, style: "Minimal", room: "Bedroom", color: "#004E89", imageUri: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=600" },
+            { id: "3", user: "Anjali S", city: "Jaipur", likes: 412, style: "Traditional", room: "Kitchen", color: "#F7B32B", imageUri: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=600" },
+            { id: "4", user: "Vikram P", city: "Delhi", likes: 97, style: "Industrial", room: "Living Room", color: "#4CAF50", imageUri: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=600" },
+          ];
+
+      return res.json({
+        trendingStyles,
+        communityDesigns: communityResults
+      });
     } catch (error) {
       next(error);
     }

@@ -127,6 +127,7 @@ model DesignImage {
 
   design    Design     @relation(fields: [designId], references: [id], onDelete: Cascade)
   purchases Purchase[]
+  favorites Favorite[]
 
   @@index([designId])
   @@map("design_images")
@@ -351,15 +352,17 @@ model Notification {
 }
 
 model Favorite {
-  id        String   @id @default(uuid())
-  userId    String   @map("user_id")
-  designId  String   @map("design_id")
-  createdAt DateTime @default(now()) @map("created_at")
+  id            String       @id @default(uuid())
+  userId        String       @map("user_id")
+  designId      String       @map("design_id")
+  designImageId String?      @map("design_image_id")
+  createdAt     DateTime     @default(now()) @map("created_at")
 
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  design Design @relation(fields: [designId], references: [id], onDelete: Cascade)
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  design      Design       @relation(fields: [designId], references: [id], onDelete: Cascade)
+  designImage DesignImage? @relation(fields: [designImageId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, designId])
+  @@unique([userId, designId, designImageId])
   @@map("favorites")
 }
 

@@ -12,6 +12,12 @@ router.post("/generate", upload.single("image"), authenticate as any, DesignCont
 // User's designs history
 router.get("/", authenticate as any, DesignController.list as any);
 
+// Challenge entries (leaderboard)
+router.get("/challenge/entries", authenticate as any, DesignController.listChallengeEntries as any);
+
+// Explore trending endpoint
+router.get("/explore/trending", authenticate as any, DesignController.getTrending as any);
+
 // Design details
 router.get("/:id", authenticate as any, DesignController.getById as any);
 

@@ -50,6 +50,7 @@ export class WalletController {
         amount: order.amount,
         currency: order.currency,
         receipt: receiptId,
+        key: process.env.RAZORPAY_KEY_ID,
       });
     } catch (error) {
       next(error);
