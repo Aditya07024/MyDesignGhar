@@ -763,46 +763,40 @@ export default function DesignerDetailsScreen() {
               </Pressable>
 
               {/* Option B: Wallet */}
-              {(() => {
-                const walletBalance = user?.walletBalance ?? 0;
-                const isInsufficient = walletBalance < designer.price;
-                return (
-                  <Pressable
-                    disabled={isInsufficient}
-                    onPress={() => setSelectedPaymentMethod("WALLET")}
-                    style={{
-                      width: "100%",
-                      flexDirection: "row",
-                      alignItems: "center",
-                      padding: 14,
-                      borderWidth: selectedPaymentMethod === "WALLET" ? 2 : 1,
-                      borderColor: selectedPaymentMethod === "WALLET" ? colors.primary : colors.border,
-                      backgroundColor: selectedPaymentMethod === "WALLET" ? colors.primary + "08" : colors.card,
-                      borderRadius: 12,
-                      gap: 14,
-                      opacity: isInsufficient ? 0.5 : 1,
-                    }}
-                  >
-                    <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: selectedPaymentMethod === "WALLET" ? colors.primary + "18" : colors.background, alignItems: "center", justifyContent: "center" }}>
-                      <Ionicons name="wallet" size={20} color={selectedPaymentMethod === "WALLET" ? colors.primary : colors.foreground} />
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={{ fontSize: 15, fontWeight: "600", color: colors.foreground, fontFamily: "Inter_600SemiBold" }}>
-                        {t("MyDesignGhar Wallet")}
-                      </Text>
-                      <Text style={{ fontSize: 12, color: isInsufficient ? "#F44336" : colors.mutedForeground, fontFamily: "Inter_400Regular", marginTop: 2 }}>
-                        {isInsufficient 
-                          ? `${t("Insufficient Balance")} (₹${walletBalance})`
-                          : `${t("Available Balance")}: ₹${walletBalance}`
-                        }
-                      </Text>
-                    </View>
-                    {selectedPaymentMethod === "WALLET" && (
-                      <Ionicons name="checkmark-circle" size={22} color={colors.primary} />
-                    )}
-                  </Pressable>
-                );
-              })()}
+              <Pressable
+                disabled={!designer || (user?.walletBalance ?? 0) < designer.price}
+                onPress={() => setSelectedPaymentMethod("WALLET")}
+                style={{
+                  width: "100%",
+                  flexDirection: "row",
+                  alignItems: "center",
+                  padding: 14,
+                  borderWidth: selectedPaymentMethod === "WALLET" ? 2 : 1,
+                  borderColor: selectedPaymentMethod === "WALLET" ? colors.primary : colors.border,
+                  backgroundColor: selectedPaymentMethod === "WALLET" ? colors.primary + "08" : colors.card,
+                  borderRadius: 12,
+                  gap: 14,
+                  opacity: (!designer || (user?.walletBalance ?? 0) < designer.price) ? 0.5 : 1,
+                }}
+              >
+                <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: selectedPaymentMethod === "WALLET" ? colors.primary + "18" : colors.background, alignItems: "center", justifyContent: "center" }}>
+                  <Ionicons name="wallet" size={20} color={selectedPaymentMethod === "WALLET" ? colors.primary : colors.foreground} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={{ fontSize: 15, fontWeight: "600", color: colors.foreground, fontFamily: "Inter_600SemiBold" }}>
+                    {t("MyDesignGhar Wallet")}
+                  </Text>
+                  <Text style={{ fontSize: 12, color: (!designer || (user?.walletBalance ?? 0) < designer.price) ? "#F44336" : colors.mutedForeground, fontFamily: "Inter_400Regular", marginTop: 2 }}>
+                    {(!designer || (user?.walletBalance ?? 0) < designer.price)
+                      ? `${t("Insufficient Balance")} (₹${user?.walletBalance ?? 0})`
+                      : `${t("Available Balance")}: ₹${user?.walletBalance ?? 0}`
+                    }
+                  </Text>
+                </View>
+                {selectedPaymentMethod === "WALLET" && (
+                  <Ionicons name="checkmark-circle" size={22} color={colors.primary} />
+                )}
+              </Pressable>
             </View>
 
             {/* Pay Button */}

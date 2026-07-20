@@ -61,6 +61,7 @@
     "expo-auth-session": "~7.0.11",
     "expo-camera": "^17.0.10",
     "expo-crypto": "~15.0.9",
+    "expo-local-authentication": "^57.0.1",
     "expo-secure-store": "~15.0.8",
     "react-native-webview": "^14.0.1"
   }
