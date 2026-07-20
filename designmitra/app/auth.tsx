@@ -19,6 +19,7 @@ import { useApp } from "@/context/AppContext";
 import { AuthService } from "../lib/api/services";
 import { setSessionToken } from "../lib/api/client";
 import { useTranslation } from "../lib/i18n";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const OPTIONS = [
   {
@@ -52,13 +53,25 @@ export default function AuthScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { login } = useApp();
+  const { t } = useTranslation();
   const [isSignup, setIsSignup] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<"USER" | "CONSULTANT" | null>(null);
+  const [confirmedRole, setConfirmedRole] = useState<"USER" | "CONSULTANT" | null>(null);
 
   const { startOAuthFlow: startGoogleFlow } = useOAuth({ strategy: "oauth_google" });
   const { startOAuthFlow: startAppleFlow } = useOAuth({ strategy: "oauth_apple" });
   const { getToken, isSignedIn, isLoaded: isAuthLoaded } = useAuth();
   const { signIn, isLoaded: isSignInLoaded } = useSignIn();
+
+  // Load previously chosen role if any
+  useEffect(() => {
+    AsyncStorage.getItem("chosen_role").then((role) => {
+      if (role === "USER" || role === "CONSULTANT") {
+        setSelectedRole(role as any);
+      }
+    });
+  }, []);
 
   // Auto-login on mount if already signed in to Clerk (handles web OAuth redirect return)
   useEffect(() => {
@@ -80,6 +93,8 @@ export default function AuthScreen() {
             streak: syncRes.user.streak || 1,
             walletBalance: syncRes.user.walletBalance || 0,
             referralCode: syncRes.user.referralCode,
+            role: syncRes.user.role,
+            consultantProfile: syncRes.user.consultantProfile || null,
           });
           if (syncRes.user.hasProfile) {
             router.replace("/(tabs)");
@@ -142,6 +157,8 @@ export default function AuthScreen() {
           streak: syncRes.user.streak || 1,
           walletBalance: syncRes.user.walletBalance || 0,
           referralCode: syncRes.user.referralCode,
+          role: syncRes.user.role,
+          consultantProfile: syncRes.user.consultantProfile || null,
         });
 
         if (syncRes.user.hasProfile) {
@@ -167,6 +184,8 @@ export default function AuthScreen() {
             streak: syncRes.user.streak || 1,
             walletBalance: syncRes.user.walletBalance || 0,
             referralCode: syncRes.user.referralCode,
+            role: syncRes.user.role,
+            consultantProfile: syncRes.user.consultantProfile || null,
           });
           if (syncRes.user.hasProfile) {
             router.replace("/(tabs)");
@@ -192,10 +211,115 @@ export default function AuthScreen() {
     router.push(option.route as any);
   }
 
+  const handleContinueRole = async () => {
+    if (selectedRole) {
+      try {
+        await AsyncStorage.setItem("chosen_role", selectedRole);
+        setConfirmedRole(selectedRole);
+      } catch (err) {
+        console.error("Failed to save chosen role:", err);
+      }
+    }
+  };
+
+  // If role is not confirmed yet, show role selection screen
+  if (confirmedRole === null) {
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top + 24 }]}>
+        <View style={styles.decorCircle1} />
+        <View style={styles.decorCircle2} />
+
+        <View style={styles.header}>
+          <Text style={[styles.title, { color: colors.foreground }]}>
+            {t("Who are you?")}
+          </Text>
+          <Text style={[styles.subtitle, { color: colors.mutedForeground }]}>
+            {t("Choose your role to customize your experience")}
+          </Text>
+        </View>
+
+        <View style={styles.options}>
+          {/* Card 1: Home Owner */}
+          <Pressable
+            onPress={() => setSelectedRole("USER")}
+            style={({ pressed }) => [
+              styles.roleCard,
+              {
+                backgroundColor: colors.card,
+                borderColor: selectedRole === "USER" ? colors.primary : colors.border,
+                borderWidth: selectedRole === "USER" ? 2 : 1,
+                borderRadius: colors.radius,
+                opacity: pressed ? 0.9 : 1,
+              },
+            ]}
+          >
+            <View style={[styles.iconBox, { backgroundColor: selectedRole === "USER" ? colors.primary + "18" : colors.muted }]}>
+              <Ionicons name="home" size={24} color={selectedRole === "USER" ? colors.primary : colors.foreground} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.optionLabel, { color: colors.foreground }]}>{t("Home Lander")}</Text>
+              <Text style={[styles.roleSub, { color: colors.mutedForeground }]}>
+                {t("I want to redesign my rooms & shop curated home decor products.")}
+              </Text>
+            </View>
+            {selectedRole === "USER" && (
+              <Ionicons name="checkmark-circle" size={22} color={colors.primary} />
+            )}
+          </Pressable>
+
+          {/* Card 2: Designer */}
+          <Pressable
+            onPress={() => setSelectedRole("CONSULTANT")}
+            style={({ pressed }) => [
+              styles.roleCard,
+              {
+                backgroundColor: colors.card,
+                borderColor: selectedRole === "CONSULTANT" ? colors.primary : colors.border,
+                borderWidth: selectedRole === "CONSULTANT" ? 2 : 1,
+                borderRadius: colors.radius,
+                opacity: pressed ? 0.9 : 1,
+              },
+            ]}
+          >
+            <View style={[styles.iconBox, { backgroundColor: selectedRole === "CONSULTANT" ? colors.primary + "18" : colors.muted }]}>
+              <Ionicons name="color-palette" size={24} color={selectedRole === "CONSULTANT" ? colors.primary : colors.foreground} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={[styles.optionLabel, { color: colors.foreground }]}>{t("Home Designer")}</Text>
+              <Text style={[styles.roleSub, { color: colors.mutedForeground }]}>
+                {t("I am a professional designer looking to offer consultations & manage slots.")}
+              </Text>
+            </View>
+            {selectedRole === "CONSULTANT" && (
+              <Ionicons name="checkmark-circle" size={22} color={colors.primary} />
+            )}
+          </Pressable>
+        </View>
+
+        <View style={{ marginTop: "auto", paddingBottom: insets.bottom + 24 }}>
+          <GradientButton
+            label={t("Continue")}
+            onPress={handleContinueRole}
+            disabled={!selectedRole}
+            style={{ width: "100%" }}
+          />
+        </View>
+      </View>
+    );
+  }
+
+  // Once role is confirmed, show the Clerk login options
   return (
     <View style={[styles.container, { backgroundColor: colors.background, paddingTop: insets.top + 24 }]}>
       <View style={styles.decorCircle1} />
       <View style={styles.decorCircle2} />
+
+      <TouchableOpacity
+        onPress={() => setConfirmedRole(null)}
+        style={styles.backBtn}
+      >
+        <Ionicons name="arrow-back" size={24} color={colors.foreground} />
+      </TouchableOpacity>
 
       <View style={styles.header}>
         <Text style={[styles.title, { color: colors.foreground }]}>
@@ -346,5 +470,26 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 18,
     fontFamily: "Inter_400Regular",
+  },
+  roleCard: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 20,
+    gap: 16,
+    marginBottom: 16,
+  },
+  roleSub: {
+    fontSize: 13,
+    lineHeight: 18,
+    fontFamily: "Inter_400Regular",
+    marginTop: 4,
+  },
+  backBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 12,
   },
 });

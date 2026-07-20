@@ -2,7 +2,7 @@ import { Feather, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import {
   Animated,
   Dimensions,
@@ -14,6 +14,7 @@ import {
   Text,
   TouchableOpacity,
   View,
+  Alert,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { DesignCard } from "@/components/DesignCard";
@@ -22,6 +23,9 @@ import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 import * as ImagePicker from "expo-image-picker";
 import { useTranslation } from "../../lib/i18n";
+import { ConsultantService } from "../../lib/api/services";
+
+import { DesignerDashboard } from "../../components/DesignerDashboard";
 
 const STYLES = ["Modern", "Traditional", "Minimal", "Bohemian", "Rustic", "Industrial", "Contemporary", "Classic"];
 
@@ -44,6 +48,30 @@ export default function HomeScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { user, designs, streak, toggleFavorite, deleteDesign } = useApp();
+
+  if (user?.role === "CONSULTANT") {
+    return <DesignerDashboard />;
+  }
+
+  const [clientBookings, setClientBookings] = useState<any[]>([]);
+  const [loadingBookings, setLoadingBookings] = useState(false);
+
+  useEffect(() => {
+    if (user && user.role !== "CONSULTANT") {
+      setLoadingBookings(true);
+      ConsultantService.listBookings()
+        .then((res) => {
+          setClientBookings(res.bookings || []);
+        })
+        .catch((err) => {
+          console.warn("Failed to load client bookings:", err);
+        })
+        .finally(() => {
+          setLoadingBookings(false);
+        });
+    }
+  }, [user?.id]);
+
   const { t } = useTranslation();
   const [selectedStyle, setSelectedStyle] = useState("Modern");
   const scaleAnim = useRef(new Animated.Value(1)).current;
@@ -129,6 +157,71 @@ export default function HomeScreen() {
       </LinearGradient>
 
       <View style={styles.content}>
+        {/* Client Confirmed Bookings / VC option */}
+        {clientBookings.filter((b) => b.status === "CONFIRMED").length > 0 && (
+          <View style={{ marginBottom: 20 }}>
+            <Text style={{ fontSize: 16, fontWeight: "700", fontFamily: "Inter_700Bold", color: colors.foreground, marginBottom: 10 }}>
+              {t("Upcoming Consultations")}
+            </Text>
+            {clientBookings
+              .filter((b) => b.status === "CONFIRMED")
+              .map((booking) => (
+                <View
+                  key={booking.id}
+                  style={{
+                    backgroundColor: colors.card,
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                    borderRadius: colors.radius || 12,
+                    padding: 16,
+                    gap: 12,
+                    marginBottom: 10,
+                  }}
+                >
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
+                    <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: colors.success + "15", alignItems: "center", justifyContent: "center" }}>
+                      <Ionicons name="videocam" size={20} color={colors.success} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontSize: 15, fontWeight: "700", fontFamily: "Inter_700Bold", color: colors.foreground }}>
+                        {booking.name || t("Designer Consultation")}
+                      </Text>
+                      <Text style={{ fontSize: 12, color: colors.mutedForeground, fontFamily: "Inter_400Regular", marginTop: 2 }}>
+                        {new Date(booking.date).toLocaleDateString()} @ {booking.time}
+                      </Text>
+                    </View>
+                    <View style={{ backgroundColor: colors.success + "15", paddingHorizontal: 8, paddingVertical: 4, borderRadius: 6 }}>
+                      <Text style={{ fontSize: 10, fontWeight: "700", color: colors.success }}>{booking.status}</Text>
+                    </View>
+                  </View>
+
+                  <Pressable
+                    onPress={() => {
+                      Alert.alert(
+                        t("Video Consultation"),
+                        t("Please open the video consultation room link on your registered email or browser to join the LiveKit call.")
+                      );
+                    }}
+                    style={{
+                      backgroundColor: colors.primary,
+                      borderRadius: 8,
+                      paddingVertical: 10,
+                      flexDirection: "row",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: 8,
+                    }}
+                  >
+                    <Feather name="video" size={14} color="#fff" />
+                    <Text style={{ color: "#fff", fontSize: 13, fontWeight: "600", fontFamily: "Inter_600SemiBold" }}>
+                      {t("Join Video Call")}
+                    </Text>
+                  </Pressable>
+                </View>
+              ))}
+          </View>
+        )}
+
         <Pressable
           onPress={() => {
             Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);

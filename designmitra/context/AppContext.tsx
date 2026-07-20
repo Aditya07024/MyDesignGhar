@@ -19,6 +19,18 @@ export type UserProfile = {
   lastOpenDate?: string;
   walletBalance?: number;
   referralCode?: string;
+  role?: "USER" | "CONSULTANT" | "ADMIN";
+  consultantProfile?: {
+    id: string;
+    status: string;
+    isApproved: boolean;
+    specialty: string;
+    experience: number;
+    bio: string;
+    price: number;
+    rating: number;
+    availability?: any[];
+  } | null;
 };
 
 export type Design = {

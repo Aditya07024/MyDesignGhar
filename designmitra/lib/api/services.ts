@@ -1,8 +1,20 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { apiClient } from "./client";
 
 export const AuthService = {
   async sync(data?: { referralCode?: string; role?: "USER" | "CONSULTANT" }) {
-    const res = await apiClient.post("/auth/sync", data);
+    let role = data?.role;
+    if (!role) {
+      try {
+        const savedRole = await AsyncStorage.getItem("chosen_role");
+        if (savedRole === "USER" || savedRole === "CONSULTANT") {
+          role = savedRole as any;
+        }
+      } catch (err) {
+        console.warn("Failed to read chosen_role from storage:", err);
+      }
+    }
+    const res = await apiClient.post("/auth/sync", { ...data, role });
     return res.data;
   },
 
