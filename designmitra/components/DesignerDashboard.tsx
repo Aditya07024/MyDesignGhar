@@ -19,6 +19,13 @@ import { useTranslation } from "../lib/i18n";
 import { ConsultantService, AuthService } from "../lib/api/services";
 import { GradientButton } from "./GradientButton";
 
+function getErrorMessage(err: any, fallback: string): string {
+  if (err.response?.data?.errors && Array.isArray(err.response.data.errors)) {
+    return err.response.data.errors.map((e: any) => e.message).join("\n");
+  }
+  return err.response?.data?.message || err.response?.data?.error || err.message || fallback;
+}
+
 export function DesignerDashboard() {
   const colors = useColors();
   const { t } = useTranslation();
@@ -85,13 +92,29 @@ export function DesignerDashboard() {
       Alert.alert(t("Error"), t("All fields are required"));
       return;
     }
+    const expNum = Number(experience);
+    const priceNum = Number(price);
+
+    if (isNaN(expNum) || expNum < 0) {
+      Alert.alert(t("Error"), t("Experience must be a non-negative number"));
+      return;
+    }
+    if (isNaN(priceNum) || priceNum <= 0) {
+      Alert.alert(t("Error"), t("Consultation price must be a positive number"));
+      return;
+    }
+    if (bio.length < 10) {
+      Alert.alert(t("Error"), t("Bio must be at least 10 characters long"));
+      return;
+    }
+
     setRegLoading(true);
     try {
       await ConsultantService.register({
         specialty,
-        experience: Number(experience),
+        experience: expNum,
         bio,
-        price: Number(price),
+        price: priceNum,
       });
       // Retrieve full updated user model from backend
       const meRes = await AuthService.getMe();
@@ -101,7 +124,7 @@ export function DesignerDashboard() {
       });
       Alert.alert(t("Success"), t("Designer Profile Registered Successfully!"));
     } catch (err: any) {
-      Alert.alert(t("Error"), err.message || t("Registration failed"));
+      Alert.alert(t("Error"), getErrorMessage(err, t("Registration failed")));
     } finally {
       setRegLoading(false);
     }
@@ -121,7 +144,7 @@ export function DesignerDashboard() {
       Alert.alert(t("Success"), t("Availability slot added successfully"));
       fetchDashboardData();
     } catch (err: any) {
-      Alert.alert(t("Error"), err.message || t("Failed to add slot"));
+      Alert.alert(t("Error"), getErrorMessage(err, t("Failed to add slot")));
     } finally {
       setSlotLoading(false);
     }
@@ -137,7 +160,7 @@ export function DesignerDashboard() {
       Alert.alert(t("Success"), t("Session notes updated successfully"));
       fetchDashboardData();
     } catch (err: any) {
-      Alert.alert(t("Error"), err.message || t("Failed to save notes"));
+      Alert.alert(t("Error"), getErrorMessage(err, t("Failed to save notes")));
     } finally {
       setNotesLoading(false);
     }
