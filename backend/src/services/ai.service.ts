@@ -68,7 +68,7 @@ export class AIService {
         logger.info(`Attempting HuggingFace FLUX.1-schnell generation with seed ${seed}...`);
         
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 seconds timeout
+        const timeoutId = setTimeout(() => controller.abort(), 12000); // 12 seconds timeout
         
         const response = await fetch(
           "https://router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-schnell",
@@ -117,7 +117,7 @@ export class AIService {
           logger.info(`Sending Pollinations AI request (Attempt ${attempt}/${maxRetries}) for seed ${seed}...`);
           const response = await axios.get(pollinationsUrl, {
             responseType: "arraybuffer",
-            timeout: 20000, // 20 seconds
+            timeout: 10000, // 10 seconds
           });
           if (response.status === 200 && response.data) {
             logger.info(`Pollinations AI succeeded for seed ${seed} on attempt ${attempt}`);

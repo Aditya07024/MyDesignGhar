@@ -109,32 +109,25 @@ export class DesignController {
         logger.info(`Reusing ${actualReusedCount} previous design images`);
       }
 
-      // Generate remaining new designs sequentially using fallbacks
-      const designBuffers: Buffer[] = [];
-      for (let i = 0; i < newImagesCount; i++) {
-        if (i > 0) {
-          // Add a delay to prevent concurrent Hugging Face rate limits
-          await new Promise((resolve) => setTimeout(resolve, 2500));
-        }
-        
+      // Generate remaining new designs in parallel using Promise.all to prevent 504 timeouts
+      const variantPrompts = [
+        positivePrompt,
+        `${positivePrompt}, architectural digest style, warm lighting, extremely detailed`,
+        `${positivePrompt}, dynamic perspective, natural afternoon sunlight, magazine photorealistic`
+      ];
+
+      const generationPromises = Array.from({ length: newImagesCount }).map((_, idx) => {
         const seed = Math.floor(Math.random() * 1000000);
-        
-        // Vary prompts slightly for each variant to ensure different layout redesigns
-        const variantPrompts = [
-          positivePrompt,
-          `${positivePrompt}, architectural digest style, warm lighting, extremely detailed`,
-          `${positivePrompt}, dynamic perspective, natural afternoon sunlight, magazine photorealistic`
-        ];
-        const promptToUse = variantPrompts[i % variantPrompts.length];
-        
-        const buffer = await AIService.generateImageFromProviders(
+        const promptToUse = variantPrompts[idx % variantPrompts.length];
+        return AIService.generateImageFromProviders(
           promptToUse,
           negativePrompt,
           seed,
           file.buffer
         );
-        designBuffers.push(buffer);
-      }
+      });
+
+      const designBuffers = await Promise.all(generationPromises);
 
       // 6. Create parent design record
       const design = await prisma.design.create({
