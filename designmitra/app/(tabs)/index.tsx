@@ -51,10 +51,6 @@ export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const { user, designs, streak, toggleFavorite, deleteDesign } = useApp();
 
-  if (user?.role === "CONSULTANT") {
-    return <DesignerDashboard />;
-  }
-
   const [clientBookings, setClientBookings] = useState<any[]>([]);
   const [loadingBookings, setLoadingBookings] = useState(false);
 
@@ -111,6 +107,10 @@ export default function HomeScreen() {
     if (!result.canceled && result.assets[0]) {
       router.push({ pathname: "/preview", params: { uri: result.assets[0].uri } });
     }
+  }
+
+  if (user?.role === "CONSULTANT") {
+    return <DesignerDashboard />;
   }
 
   return (
