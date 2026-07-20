@@ -81,7 +81,11 @@ export default function AuthScreen() {
             walletBalance: syncRes.user.walletBalance || 0,
             referralCode: syncRes.user.referralCode,
           });
-          router.replace("/onboarding/details");
+          if (syncRes.user.hasProfile) {
+            router.replace("/(tabs)");
+          } else {
+            router.replace("/onboarding/details");
+          }
         })
         .catch((err) => {
           console.warn("Auto-sync failed on mount:", err);
@@ -140,7 +144,11 @@ export default function AuthScreen() {
           referralCode: syncRes.user.referralCode,
         });
 
-        router.replace("/onboarding/details");
+        if (syncRes.user.hasProfile) {
+          router.replace("/(tabs)");
+        } else {
+          router.replace("/onboarding/details");
+        }
       }
     } catch (error: any) {
       const errMsg = error.message || "";
@@ -160,7 +168,11 @@ export default function AuthScreen() {
             walletBalance: syncRes.user.walletBalance || 0,
             referralCode: syncRes.user.referralCode,
           });
-          router.replace("/onboarding/details");
+          if (syncRes.user.hasProfile) {
+            router.replace("/(tabs)");
+          } else {
+            router.replace("/onboarding/details");
+          }
           return;
         } catch (tokenErr) {
           console.error("Failed to sync existing session:", tokenErr);

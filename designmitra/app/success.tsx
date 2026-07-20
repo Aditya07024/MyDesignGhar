@@ -72,11 +72,11 @@ export default function SuccessScreen() {
       )}
 
       <View style={styles.actions}>
-        <GradientButton
+        {/* <GradientButton
           label={t("View Unlocked Designs")}
           onPress={() => router.push({ pathname: "/shopping", params: { designId } })}
           style={{ marginBottom: 0 }}
-        />
+        /> */}
         <GradientButton
           label={t("Book Designer Consultation — ₹999")}
           onPress={() => {}}

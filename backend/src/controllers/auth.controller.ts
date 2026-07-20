@@ -98,6 +98,7 @@ export class AuthController {
           walletBalance: activeUser.wallet?.balance || 0,
           referralCode: activeUser.referralCode,
           isPhoneVerified: activeUser.isPhoneVerified,
+          hasProfile: !!activeUser.profile,
           consultantProfile: activeUser.consultantProfile ? {
             id: activeUser.consultantProfile.id,
             status: activeUser.consultantProfile.status,
@@ -159,6 +160,7 @@ export class AuthController {
           walletBalance: user.wallet?.balance || 0,
           referralCode: user.referralCode,
           isPhoneVerified: user.isPhoneVerified,
+          hasProfile: !!user.profile,
           consultantProfile: user.consultantProfile ? {
             id: user.consultantProfile.id,
             status: user.consultantProfile.status,
