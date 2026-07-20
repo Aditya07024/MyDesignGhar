@@ -1,6 +1,6 @@
 import { Feather, Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Platform,
   Pressable,
@@ -9,12 +9,14 @@ import {
   Text,
   TextInput,
   View,
+  ActivityIndicator,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { DesignCard } from "@/components/DesignCard";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
 import { useTranslation } from "../../lib/i18n";
+import { WalletService } from "../../lib/api/services";
 
 const TABS = ["All", "Favorites", "Purchased"];
 
@@ -22,13 +24,161 @@ export default function DesignsScreen() {
   const colors = useColors();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { designs, toggleFavorite, deleteDesign } = useApp();
+  const { user, designs, toggleFavorite, deleteDesign } = useApp();
   const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState("All");
   const [search, setSearch] = useState("");
 
+  const [transactions, setTransactions] = useState<any[]>([]);
+  const [loadingTransactions, setLoadingTransactions] = useState(false);
+
+  useEffect(() => {
+    if (user?.role === "CONSULTANT") {
+      setLoadingTransactions(true);
+      WalletService.getHistory()
+        .then((res) => {
+          setTransactions(res.transactions || res || []);
+        })
+        .catch((err) => {
+          console.warn("Failed to load earnings history:", err);
+        })
+        .finally(() => {
+          setLoadingTransactions(false);
+        });
+    }
+  }, [user?.role]);
+
   const topPad = insets.top + (Platform.OS === "web" ? 67 : 0);
   const bottomPad = insets.bottom + (Platform.OS === "web" ? 34 : 70);
+
+  if (user?.role === "CONSULTANT") {
+    const credits = transactions.filter((t) => t.type === "CREDIT" || t.amount > 0);
+    const totalEarned = credits.reduce((sum, t) => sum + (t.amount || 0), 0);
+
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background }]}>
+        <View style={[styles.header, { paddingTop: topPad + 16 }]}>
+          <Text style={[styles.title, { color: colors.foreground }]}>{t("Earnings")}</Text>
+          
+          <View style={{
+            backgroundColor: colors.card,
+            borderWidth: 1,
+            borderColor: colors.border,
+            borderRadius: colors.radius || 12,
+            padding: 20,
+            marginTop: 10,
+            gap: 16,
+          }}>
+            <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+              <View>
+                <Text style={{ fontSize: 13, color: colors.mutedForeground, fontFamily: "Inter_400Regular" }}>{t("Available Balance")}</Text>
+                <Text style={{ fontSize: 28, fontWeight: "800", fontFamily: "Inter_700Bold", color: colors.foreground, marginTop: 4 }}>
+                  ₹{user.walletBalance ?? 0}
+                </Text>
+              </View>
+              <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: colors.primary + "15", alignItems: "center", justifyContent: "center" }}>
+                <Ionicons name="wallet-outline" size={24} color={colors.primary} />
+              </View>
+            </View>
+            
+            <View style={{ height: 1, backgroundColor: colors.border }} />
+
+            <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+              <View>
+                <Text style={{ fontSize: 12, color: colors.mutedForeground, fontFamily: "Inter_400Regular" }}>{t("Total Earned")}</Text>
+                <Text style={{ fontSize: 16, fontWeight: "700", fontFamily: "Inter_700Bold", color: colors.foreground, marginTop: 2 }}>
+                  ₹{totalEarned}
+                </Text>
+              </View>
+              <View>
+                <Text style={{ fontSize: 12, color: colors.mutedForeground, fontFamily: "Inter_400Regular" }}>{t("Consultation Fee")}</Text>
+                <Text style={{ fontSize: 16, fontWeight: "700", fontFamily: "Inter_700Bold", color: colors.foreground, marginTop: 2 }}>
+                  ₹{user.consultantProfile?.price ?? 500}
+                </Text>
+              </View>
+            </View>
+          </View>
+        </View>
+
+        <ScrollView
+          contentContainerStyle={[styles.scroll, { paddingBottom: bottomPad }]}
+          showsVerticalScrollIndicator={false}
+        >
+          <Text style={{ fontSize: 16, fontWeight: "700", fontFamily: "Inter_700Bold", color: colors.foreground, marginBottom: 14, marginTop: 10 }}>
+            {t("Transactions History")}
+          </Text>
+
+          {loadingTransactions ? (
+            <ActivityIndicator size="small" color={colors.primary} style={{ marginVertical: 30 }} />
+          ) : transactions.length === 0 ? (
+            <View style={[styles.empty, { paddingTop: 30 }]}>
+              <View style={[styles.emptyIcon, { backgroundColor: colors.muted }]}>
+                <Ionicons name="receipt-outline" size={36} color={colors.mutedForeground} />
+              </View>
+              <Text style={[styles.emptyTitle, { color: colors.foreground }]}>{t("No earnings yet")}</Text>
+              <Text style={[styles.emptyText, { color: colors.mutedForeground }]}>
+                {t("Complete customer bookings to see your transaction history here.")}
+              </Text>
+            </View>
+          ) : (
+            <View style={{ gap: 12 }}>
+              {transactions.map((tx) => {
+                const isCredit = tx.type === "CREDIT" || tx.amount > 0;
+                return (
+                  <View
+                    key={tx.id}
+                    style={{
+                      flexDirection: "row",
+                      alignItems: "center",
+                      backgroundColor: colors.card,
+                      borderWidth: 1,
+                      borderColor: colors.border,
+                      borderRadius: 12,
+                      padding: 14,
+                      gap: 12,
+                    }}
+                  >
+                    <View style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: 18,
+                      backgroundColor: isCredit ? colors.success + "15" : "rgba(239, 68, 68, 0.15)",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}>
+                      <Ionicons
+                        name={isCredit ? "arrow-down" : "arrow-up"}
+                        size={18}
+                        color={isCredit ? colors.success : "#EF4444"}
+                      />
+                    </View>
+                    
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ fontSize: 14, fontWeight: "600", fontFamily: "Inter_600SemiBold", color: colors.foreground }}>
+                        {tx.description || (isCredit ? t("Consultation Earning") : t("Wallet Topup / Purchase"))}
+                      </Text>
+                      <Text style={{ fontSize: 11, color: colors.mutedForeground, fontFamily: "Inter_400Regular", marginTop: 2 }}>
+                        {new Date(tx.createdAt).toLocaleDateString()}
+                      </Text>
+                    </View>
+
+                    <Text style={{
+                      fontSize: 15,
+                      fontWeight: "700",
+                      fontFamily: "Inter_700Bold",
+                      color: isCredit ? colors.success : "#EF4444",
+                    }}>
+                      {isCredit ? "+" : "-"}₹{Math.abs(tx.amount)}
+                    </Text>
+                  </View>
+                );
+              })}
+            </View>
+          )}
+        </ScrollView>
+      </View>
+    );
+  }
 
   const filtered = designs.filter((d) => {
     const matchTab =

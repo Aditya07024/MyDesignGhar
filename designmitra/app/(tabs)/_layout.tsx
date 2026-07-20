@@ -7,8 +7,14 @@ import { SymbolView } from "expo-symbols";
 import React from "react";
 import { Platform, StyleSheet, View, useColorScheme } from "react-native";
 import { useColors } from "@/hooks/useColors";
+import { useApp } from "@/context/AppContext";
+import { useTranslation } from "../../lib/i18n";
 
 function NativeTabLayout() {
+  const { user } = useApp();
+  const { t } = useTranslation();
+  const isConsultant = user?.role === "CONSULTANT";
+
   return (
     <NativeTabs>
       <NativeTabs.Trigger name="index">
@@ -20,8 +26,8 @@ function NativeTabLayout() {
         <Label>Explore</Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="designs">
-        <Icon sf={{ default: "rectangle.stack", selected: "rectangle.stack.fill" }} />
-        <Label>My Designs</Label>
+        <Icon sf={{ default: isConsultant ? "indianrupeesign.circle" : "rectangle.stack", selected: isConsultant ? "indianrupeesign.circle.fill" : "rectangle.stack.fill" }} />
+        <Label>{isConsultant ? t("Earnings") : t("My Designs")}</Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger name="profile">
         <Icon sf={{ default: "person.circle", selected: "person.circle.fill" }} />
@@ -37,6 +43,10 @@ function ClassicTabLayout() {
   const isDark = colorScheme === "dark";
   const isIOS = Platform.OS === "ios";
   const isWeb = Platform.OS === "web";
+
+  const { user } = useApp();
+  const { t } = useTranslation();
+  const isConsultant = user?.role === "CONSULTANT";
 
   return (
     <Tabs
@@ -94,12 +104,12 @@ function ClassicTabLayout() {
       <Tabs.Screen
         name="designs"
         options={{
-          title: "My Designs",
+          title: isConsultant ? t("Earnings") : t("My Designs"),
           tabBarIcon: ({ color }) =>
             isIOS ? (
-              <SymbolView name="rectangle.stack" tintColor={color} size={24} />
+              <SymbolView name={isConsultant ? "indianrupeesign.circle" : "rectangle.stack"} tintColor={color} size={24} />
             ) : (
-              <Feather name="layers" size={22} color={color} />
+              <Feather name={isConsultant ? "credit-card" : "layers"} size={22} color={color} />
             ),
         }}
       />
