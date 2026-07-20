@@ -443,7 +443,7 @@ export default function ProfileScreen() {
 
       <View style={[styles.referralCard, { backgroundColor: colors.card, borderColor: colors.border, marginHorizontal: 20, borderRadius: colors.radius }]}>
         <Text style={[styles.referralTitle, { color: colors.foreground }]}>{t("Refer & Earn")}</Text>
-        <Text style={[styles.referralSub, { color: colors.mutedForeground }]}>{t("Share your code and earn ₹100 per referral")}</Text>
+        <Text style={[styles.referralSub, { color: colors.mutedForeground }]}>{t("Share your code and get a free design purchase per successful referral")}</Text>
         <View style={styles.referralCodeRow}>
           <Text style={[styles.referralCode, { color: colors.primary, backgroundColor: colors.primary + "15", borderRadius: 8 }]}>
             {user?.referralCode || "DM00000"}

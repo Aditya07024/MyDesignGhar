@@ -143,6 +143,16 @@ export const ReferralService = {
     const res = await apiClient.get("/referrals/stats");
     return res.data;
   },
+
+  async verifyCoupon(code: string) {
+    const res = await apiClient.post("/referrals/verify-coupon", { code });
+    return res.data;
+  },
+
+  async useCoupon(designId: string, referralCode: string) {
+    const res = await apiClient.post("/referrals/use-coupon", { designId, referralCode });
+    return res.data;
+  },
 };
 
 export const ConsultantService = {

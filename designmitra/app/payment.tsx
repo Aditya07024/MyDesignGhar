@@ -9,12 +9,15 @@ import {
   StyleSheet,
   Text,
   View,
+  TextInput,
+  ActivityIndicator,
+  Alert,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { GradientButton } from "@/components/GradientButton";
 import { useApp } from "@/context/AppContext";
 import { useColors } from "@/hooks/useColors";
-import { WalletService } from "../lib/api/services";
+import { WalletService, ReferralService } from "../lib/api/services";
 import { useTranslation } from "../lib/i18n";
 
 const PAYMENT_METHODS = [
@@ -39,16 +42,54 @@ export default function PaymentScreen() {
   const [selectedMethod, setSelectedMethod] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // Coupon States
+  const [couponCode, setCouponCode] = useState("");
+  const [verifyingCoupon, setVerifyingCoupon] = useState(false);
+  const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
+  const [couponError, setCouponError] = useState<string | null>(null);
+  const [referrerName, setReferrerName] = useState<string | null>(null);
+
   const design = designs.find((d) => d.id === designId) || designs[0];
+
+  async function handleApplyCoupon() {
+    if (!couponCode.trim()) {
+      setCouponError(t("Please enter a coupon code"));
+      return;
+    }
+    setVerifyingCoupon(true);
+    setCouponError(null);
+    try {
+      const res = await ReferralService.verifyCoupon(couponCode.trim());
+      if (res.valid) {
+        setAppliedCoupon(couponCode.trim());
+        setReferrerName(res.referrerName);
+        setSelectedMethod("coupon"); // Select coupon method automatically
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      } else {
+        setCouponError(res.message || t("Invalid coupon code"));
+        Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      }
+    } catch (err: any) {
+      setCouponError(err.response?.data?.message || err.message || t("Invalid coupon code"));
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    } finally {
+      setVerifyingCoupon(false);
+    }
+  }
 
   async function handlePay() {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     setLoading(true);
     try {
-      if (selectedMethod === "app_wallet") {
+      if (appliedCoupon) {
+        if (designId) {
+          await ReferralService.useCoupon(designId, appliedCoupon);
+          purchaseDesign(designId);
+        }
+      } else if (selectedMethod === "app_wallet") {
         const currentBal = user?.walletBalance ?? 0;
         if (currentBal < 299) {
-          alert(t("Insufficient Balance") + ". " + t("Please add money to your wallet from the profile screen before checking out."));
+          Alert.alert(t("Insufficient Balance"), t("Please add money to your wallet from the profile screen before checking out."));
           setLoading(false);
           return;
         }
@@ -65,7 +106,7 @@ export default function PaymentScreen() {
       }
       router.replace({ pathname: "/success", params: { designId } });
     } catch (err: any) {
-      alert(t(err.response?.data?.message || "Payment failed. Please try again."));
+      Alert.alert(t("Payment Failed"), t(err.response?.data?.message || "Payment failed. Please try again."));
     } finally {
       setLoading(false);
     }
@@ -104,11 +145,99 @@ export default function PaymentScreen() {
           ))}
         </View>
 
-        <Text style={[styles.sectionTitle, { color: colors.foreground, marginTop: 20 }]}>{t("Payment Method")}</Text>
+        <Text style={[styles.sectionTitle, { color: colors.foreground, marginTop: 20 }]}>{t("Use Referral Coupon")}</Text>
+        <View style={{
+          backgroundColor: colors.card,
+          borderWidth: 1,
+          borderColor: colors.border,
+          borderRadius: colors.radius,
+          padding: 14,
+          gap: 12,
+          marginBottom: 20,
+        }}>
+          {appliedCoupon ? (
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+              <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: colors.success + "15", alignItems: "center", justifyContent: "center" }}>
+                <Ionicons name="checkmark-circle" size={20} color={colors.success} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 14, fontWeight: "700", color: colors.foreground, fontFamily: "Inter_700Bold" }}>
+                  {t("Referral Coupon Applied!")}
+                </Text>
+                <Text style={{ fontSize: 12, color: colors.mutedForeground, fontFamily: "Inter_400Regular", marginTop: 2 }}>
+                  {t("Referred by")}: {referrerName} (100% Free)
+                </Text>
+              </View>
+              <Pressable
+                onPress={() => {
+                  setAppliedCoupon(null);
+                  setReferrerName(null);
+                  setSelectedMethod("");
+                  setCouponCode("");
+                }}
+                style={{ padding: 4 }}
+              >
+                <Feather name="trash-2" size={18} color={colors.destructive} />
+              </Pressable>
+            </View>
+          ) : (
+            <>
+              <View style={{ flexDirection: "row", gap: 10 }}>
+                <TextInput
+                  value={couponCode}
+                  onChangeText={setCouponCode}
+                  placeholder={t("Enter referral code (e.g. MDG-ABCDEF)")}
+                  placeholderTextColor={colors.mutedForeground}
+                  autoCapitalize="characters"
+                  style={{
+                    flex: 1,
+                    borderWidth: 1,
+                    borderColor: colors.border,
+                    borderRadius: 8,
+                    paddingHorizontal: 12,
+                    paddingVertical: 8,
+                    fontSize: 14,
+                    color: colors.foreground,
+                    backgroundColor: colors.background,
+                    fontFamily: "Inter_400Regular",
+                  }}
+                />
+                <Pressable
+                  disabled={verifyingCoupon}
+                  onPress={handleApplyCoupon}
+                  style={{
+                    backgroundColor: colors.primary,
+                    borderRadius: 8,
+                    paddingHorizontal: 16,
+                    alignItems: "center",
+                    justifyContent: "center",
+                    minWidth: 80,
+                  }}
+                >
+                  {verifyingCoupon ? (
+                    <ActivityIndicator size="small" color="#fff" />
+                  ) : (
+                    <Text style={{ color: "#fff", fontWeight: "600", fontSize: 13, fontFamily: "Inter_600SemiBold" }}>
+                      {t("Apply")}
+                    </Text>
+                  )}
+                </Pressable>
+              </View>
+              {couponError && (
+                <Text style={{ fontSize: 12, color: colors.destructive, fontFamily: "Inter_400Regular" }}>
+                  {couponError}
+                </Text>
+              )}
+            </>
+          )}
+        </View>
+
+        <Text style={[styles.sectionTitle, { color: colors.foreground }]}>{t("Payment Method")}</Text>
         <View style={styles.methodList}>
           {PAYMENT_METHODS.map((m) => (
             <Pressable
               key={m.id}
+              disabled={!!appliedCoupon}
               onPress={() => setSelectedMethod(m.id)}
               style={[
                 styles.methodCard,
@@ -117,6 +246,7 @@ export default function PaymentScreen() {
                   backgroundColor: selectedMethod === m.id ? colors.primary + "08" : colors.card,
                   borderWidth: selectedMethod === m.id ? 2 : 1,
                   borderRadius: colors.radius,
+                  opacity: appliedCoupon ? 0.5 : 1,
                 },
               ]}
             >
@@ -141,14 +271,14 @@ export default function PaymentScreen() {
         <View style={styles.priceRow}>
           <View>
             <Text style={[styles.originalPrice, { color: colors.mutedForeground }]}>₹599</Text>
-            <Text style={[styles.price, { color: colors.foreground }]}>₹299</Text>
+            <Text style={[styles.price, { color: colors.foreground }]}>{appliedCoupon ? "₹0" : "₹299"}</Text>
           </View>
           <View style={[styles.saveBadge, { backgroundColor: colors.success + "20" }]}>
-            <Text style={[styles.saveText, { color: colors.success }]}>{t("Save 50%")}</Text>
+            <Text style={[styles.saveText, { color: colors.success }]}>{appliedCoupon ? t("100% OFF") : t("Save 50%")}</Text>
           </View>
         </View>
         <GradientButton
-          label={loading ? t("Processing...") : t("Pay ₹299")}
+          label={loading ? t("Processing...") : (appliedCoupon ? t("Unlock Free Design") : t("Pay ₹299"))}
           onPress={handlePay}
           loading={loading}
           disabled={!selectedMethod}

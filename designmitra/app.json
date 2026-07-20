@@ -2,6 +2,7 @@
   "expo": {
     "name": "MyDesignGhar",
     "slug": "mydesignghar",
+    "owner": "adityagla",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -18,7 +19,11 @@
       "bundleIdentifier": "com.mydesignghar.app"
     },
     "android": {
-      "package": "com.mydesignghar.app"
+      "package": "com.mydesignghar.app",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/images/icon.png"
@@ -38,6 +43,11 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "fc88929e-558d-496e-a406-456416479497"
+      }
     }
   }
 }
