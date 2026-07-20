@@ -152,12 +152,9 @@ export default function PaymentScreen() {
           onPress={handlePay}
           loading={loading}
           disabled={!selectedMethod}
-          style={{ flex: 1 }}
+          style={{ width: "100%" }}
         />
-        <View style={styles.securedRow}>
-          <Ionicons name="lock-closed" size={13} color={colors.mutedForeground} />
-          <Text style={[styles.securedText, { color: colors.mutedForeground }]}>{t("Secured by Razorpay")}</Text>
-        </View>
+        
       </View>
     </View>
   );
