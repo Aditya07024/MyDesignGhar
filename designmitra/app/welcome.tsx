@@ -33,7 +33,7 @@ const SLIDES = [
     id: "3",
     image: require("../assets/images/onboarding3.png"),
     title: "Shop the Look",
-    subtitle: "Get a full shopping list from Amazon & Flipkart. Turn your dream room into reality.",
+    subtitle: "Get everything you need for your dream space—all in one place.",
   },
 ];
 
@@ -73,12 +73,12 @@ export default function WelcomeScreen() {
         )}
       />
 
-      <Pressable
+      {/* <Pressable
         onPress={() => router.replace("/auth")}
         style={[styles.skipBtn, { top: insets.top + 16, right: 20 }]}
       >
         <Text style={styles.skipText}>{t("Skip")}</Text>
-      </Pressable>
+      </Pressable> */}
 
       <View style={[styles.bottomContainer, { paddingBottom: insets.bottom + 24 }]}>
         <View style={styles.dots}>

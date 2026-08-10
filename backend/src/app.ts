@@ -25,6 +25,8 @@ app.use(
     origin: [
       env.FRONTEND_URL,
       env.ADMIN_URL,
+      "http://localhost:5173",
+      "http://localhost:3000",
       "http://localhost:8081",  // Expo web dev server
       "http://localhost:19006", // Expo web (alt port)
     ].filter(Boolean),

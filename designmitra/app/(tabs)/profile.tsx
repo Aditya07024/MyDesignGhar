@@ -21,6 +21,7 @@ import { useColors } from "@/hooks/useColors";
 import { GradientButton } from "@/components/GradientButton";
 import { AuthService, WalletService, NotificationService } from "../../lib/api/services";
 import { useTranslation } from "../../lib/i18n";
+import { WebView } from "react-native-webview";
 
 const SETTING_SECTIONS = [
   {
@@ -104,6 +105,12 @@ export default function ProfileScreen() {
   const [transactionsVisible, setTransactionsVisible] = useState(false);
   const [transactionsList, setTransactionsList] = useState<any[]>([]);
   const [loadingTransactions, setLoadingTransactions] = useState(false);
+
+  // Razorpay Native WebView Modal State
+  const [showRazorpayModal, setShowRazorpayModal] = useState(false);
+  const [paymentHtml, setPaymentHtml] = useState("");
+  const [pendingOrderId, setPendingOrderId] = useState("");
+  const [pendingAmount, setPendingAmount] = useState(0);
 
   const topPad = insets.top + (Platform.OS === "web" ? 67 : 0);
   const bottomPad = insets.bottom + (Platform.OS === "web" ? 34 : 70);
@@ -282,81 +289,193 @@ export default function ProfileScreen() {
         }
         setAddingMoney(false);
         setAddMoneyVisible(false);
-        alert(`Mock Top-Up of ₹${amt} successful!`);
+        Alert.alert(t("Success"), `Mock Top-Up of ₹${amt} successful!`);
       } else {
-        if (Platform.OS !== "web") {
-          alert("Razorpay checkout is only supported on Web in development. Simulating payment...");
-          const res = await WalletService.requestTopUp(amt, true);
-          if (res?.wallet) {
-            updateProfile({ walletBalance: res.wallet.balance });
-          }
-          setAddingMoney(false);
-          setAddMoneyVisible(false);
-          return;
-        }
-
-        const success = await loadRazorpay();
-        if (!success) {
-          setPaymentError("Failed to load Razorpay Checkout SDK. Try again.");
-          setAddingMoney(false);
-          return;
-        }
-
         const orderData = await WalletService.requestTopUp(amt, false);
         const { orderId, amount: orderAmt, currency, key } = orderData;
+        const apiKey = key || process.env.EXPO_PUBLIC_RAZORPAY_KEY_ID || "rzp_live_SrZjx0jgQ3fnmi";
 
-        const options = {
-          key: key || "rzp_live_SrZjx0jgQ3fnmi",
-          amount: orderAmt,
-          currency: currency || "INR",
-          name: "MyDesignGhar",
-          description: "Wallet Top-up",
-          order_id: orderId,
-          handler: async function (response: any) {
-            try {
-              setAddingMoney(true);
-              await WalletService.verifyTopUp({
-                orderId: orderId,
-                paymentId: response.razorpay_payment_id,
-                signature: response.razorpay_signature,
-                amount: amt,
-              });
-              
-              const balanceRes = await WalletService.getBalance();
-              if (balanceRes?.wallet) {
-                updateProfile({ walletBalance: balanceRes.wallet.balance });
-              }
-              alert(`Payment Verified! ₹${amt} added successfully.`);
-              setAddMoneyVisible(false);
-            } catch (err: any) {
-              alert(`Payment verification failed: ${err?.message || "Unknown error"}`);
-            } finally {
-              setAddingMoney(false);
-            }
-          },
-          prefill: {
-            name: user?.name || "",
-            email: user?.email || "",
-            contact: user?.phone || "",
-          },
-          theme: {
-            color: colors.primary,
-          },
-          modal: {
-            ondismiss: function () {
-              setAddingMoney(false);
-            }
+        if (Platform.OS === "web") {
+          const success = await loadRazorpay();
+          if (!success) {
+            setPaymentError("Failed to load Razorpay Checkout SDK. Try again.");
+            setAddingMoney(false);
+            return;
           }
-        };
 
-        const rzp = new (window as any).Razorpay(options);
-        rzp.open();
+          const options = {
+            key: apiKey,
+            amount: orderAmt,
+            currency: currency || "INR",
+            name: "MyDesignGhar",
+            description: "Wallet Top-up",
+            order_id: orderId,
+            handler: async function (response: any) {
+              try {
+                setAddingMoney(true);
+                await WalletService.verifyTopUp({
+                  orderId: orderId,
+                  paymentId: response.razorpay_payment_id,
+                  signature: response.razorpay_signature,
+                  amount: amt,
+                });
+                
+                const balanceRes = await WalletService.getBalance();
+                if (balanceRes?.wallet) {
+                  updateProfile({ walletBalance: balanceRes.wallet.balance });
+                }
+                Alert.alert(t("Success"), `Payment Verified! ₹${amt} added successfully.`);
+                setAddMoneyVisible(false);
+              } catch (err: any) {
+                Alert.alert(t("Payment Failed"), `Payment verification failed: ${err?.message || "Unknown error"}`);
+              } finally {
+                setAddingMoney(false);
+              }
+            },
+            prefill: {
+              name: user?.name || "",
+              email: user?.email || "",
+              contact: user?.phone || "",
+            },
+            theme: {
+              color: colors.primary,
+            },
+            modal: {
+              ondismiss: function () {
+                setAddingMoney(false);
+              }
+            }
+          };
+
+          const rzp = new (window as any).Razorpay(options);
+          rzp.open();
+        } else {
+          // Native WebView Checkout
+          const isDark = colors.background === "#12141a";
+          const htmlBg = isDark ? "#12141a" : "#ffffff";
+          const htmlTextCol = isDark ? "#ffffff" : "#12141a";
+
+          const html = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+              <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+              <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+              <style>
+                body {
+                  background-color: ${htmlBg};
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  height: 100vh;
+                  margin: 0;
+                  font-family: sans-serif;
+                  color: ${htmlTextCol};
+                }
+                .loader {
+                  text-align: center;
+                  padding: 20px;
+                }
+              </style>
+            </head>
+            <body>
+              <div class="loader">
+                <h3>Connecting to Razorpay...</h3>
+                <p>Please complete your payment in the checkout window.</p>
+              </div>
+              <script>
+                var options = {
+                  "key": "${apiKey}",
+                  "amount": ${orderAmt},
+                  "currency": "${currency || 'INR'}",
+                  "name": "MyDesignGhar",
+                  "description": "Wallet Top-up",
+                  "order_id": "${orderId}",
+                  "handler": function (response) {
+                    window.ReactNativeWebView.postMessage(JSON.stringify({
+                      status: 'success',
+                      data: {
+                        razorpay_payment_id: response.razorpay_payment_id,
+                        razorpay_signature: response.razorpay_signature,
+                        razorpay_order_id: response.razorpay_order_id || '${orderId}'
+                      }
+                    }));
+                  },
+                  "prefill": {
+                    "name": "${user?.name || ''}",
+                    "email": "${user?.email || ''}",
+                    "contact": "${user?.phone || ''}"
+                  },
+                  "theme": {
+                    "color": "${colors.primary}"
+                  },
+                  "modal": {
+                    "ondismiss": function() {
+                      window.ReactNativeWebView.postMessage(JSON.stringify({
+                        status: 'cancelled'
+                      }));
+                    }
+                  }
+                };
+                var rzp = new Razorpay(options);
+                rzp.on('payment.failed', function (response){
+                  window.ReactNativeWebView.postMessage(JSON.stringify({
+                    status: 'failed',
+                    error: response.error
+                  }));
+                });
+                rzp.open();
+              </script>
+            </body>
+            </html>
+          `;
+
+          setPendingOrderId(orderId);
+          setPendingAmount(amt);
+          setPaymentHtml(html);
+          setAddMoneyVisible(false);
+          setShowRazorpayModal(true);
+        }
       }
     } catch (err: any) {
       setPaymentError(err?.response?.data?.message || err?.message || "Payment request failed");
       setAddingMoney(false);
     }
   }
+
+  const handleWebViewMessage = async (event: any) => {
+    try {
+      const response = JSON.parse(event.nativeEvent.data);
+      setShowRazorpayModal(false);
+
+      if (response.status === "success") {
+        const { razorpay_payment_id, razorpay_signature, razorpay_order_id } = response.data;
+        setAddingMoney(true);
+        
+        await WalletService.verifyTopUp({
+          orderId: razorpay_order_id || pendingOrderId,
+          paymentId: razorpay_payment_id,
+          signature: razorpay_signature,
+          amount: pendingAmount,
+        });
+
+        const balanceRes = await WalletService.getBalance();
+        if (balanceRes?.wallet) {
+          updateProfile({ walletBalance: balanceRes.wallet.balance });
+        }
+        Alert.alert(t("Success"), `Payment Verified! ₹${pendingAmount} added successfully.`);
+      } else if (response.status === "failed") {
+        Alert.alert(t("Payment Failed"), response.error?.description || t("Payment failed or was declined."));
+      } else if (response.status === "cancelled") {
+        Alert.alert(t("Payment Cancelled"), t("You cancelled the payment transaction."));
+      }
+    } catch (err: any) {
+      console.error("Payment handle error:", err);
+      Alert.alert(t("Error"), t("Could not complete payment verification."));
+    } finally {
+      setAddingMoney(false);
+    }
+  };
 
   return (
     <ScrollView
@@ -839,6 +958,29 @@ export default function ProfileScreen() {
               </Text>
             </View>
           </View>
+        </View>
+      </Modal>
+
+      {/* Razorpay WebView Modal for Native */}
+      <Modal visible={showRazorpayModal} animationType="slide" onRequestClose={() => setShowRazorpayModal(false)}>
+        <View style={{ flex: 1, backgroundColor: colors.background }}>
+          <View style={{ height: 56, flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, borderBottomWidth: 1, borderBottomColor: colors.border, backgroundColor: colors.card }}>
+            <Text style={{ fontSize: 16, fontWeight: "800", color: colors.foreground }}>{t("Razorpay Payment")}</Text>
+            <TouchableOpacity onPress={() => {
+              setShowRazorpayModal(false);
+              setAddingMoney(false);
+            }}>
+              <Text style={{ color: "#F44336", fontWeight: "700" }}>{t("Cancel")}</Text>
+            </TouchableOpacity>
+          </View>
+          <WebView
+            source={{ html: paymentHtml }}
+            onMessage={handleWebViewMessage}
+            style={{ flex: 1 }}
+            javaScriptEnabled
+            domStorageEnabled
+            originWhitelist={["*"]}
+          />
         </View>
       </Modal>
     </ScrollView>

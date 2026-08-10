@@ -6,6 +6,7 @@ import { Icon, Label, NativeTabs } from "expo-router/unstable-native-tabs";
 import { SymbolView } from "expo-symbols";
 import React from "react";
 import { Platform, StyleSheet, View, useColorScheme } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useColors } from "@/hooks/useColors";
 import { useApp } from "@/context/AppContext";
 import { useTranslation } from "../../lib/i18n";
@@ -43,10 +44,13 @@ function ClassicTabLayout() {
   const isDark = colorScheme === "dark";
   const isIOS = Platform.OS === "ios";
   const isWeb = Platform.OS === "web";
+  const insets = useSafeAreaInsets();
 
   const { user } = useApp();
   const { t } = useTranslation();
   const isConsultant = user?.role === "CONSULTANT";
+
+  const tabBarHeight = isWeb ? 84 : 60 + insets.bottom;
 
   return (
     <Tabs
@@ -60,7 +64,9 @@ function ClassicTabLayout() {
           borderTopWidth: 1,
           borderTopColor: colors.border,
           elevation: 0,
-          height: isWeb ? 84 : 62,
+          height: tabBarHeight,
+          paddingBottom: isWeb ? 0 : insets.bottom,
+          paddingTop: 6,
         },
         tabBarLabelStyle: {
           fontFamily: "Inter_500Medium",
