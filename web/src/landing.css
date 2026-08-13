@@ -115,7 +115,7 @@ body {
   text-decoration: none;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 6px;
   transition: var(--transition-fast);
 }
 
