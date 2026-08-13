@@ -7,7 +7,7 @@ export class QuoteController {
    */
   static async submitQuote(req: Request, res: Response, next: NextFunction) {
     try {
-      const { name, email, phone, service, budget, style, message, imageUrl } = req.body;
+      const { name, email, phone, service, budget, style, statePreference, state, message, imageUrl } = req.body;
 
       if (!name || (!email && !phone)) {
         return res.status(400).json({ error: "Name and at least email or phone number are required." });
@@ -24,6 +24,7 @@ export class QuoteController {
             service: service || "AI Room Styling",
             budget: budget || "Not specified",
             style: style || "General",
+            statePreference: statePreference || state || "Not specified",
             message: message || "",
             imageUrl: imageUrl || null,
             status: "WAITLIST",

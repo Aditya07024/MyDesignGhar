@@ -21,7 +21,6 @@ export default function Navbar() {
             <a href="#consultation">Virtual Consultant</a>
             <a href="#projects">Custom Spaces</a>
             <a href="/consultant/login">Designer Portal</a>
-            <a href="/admin/login">Admin Portal</a>
           </div>
         </li>
         <li><a href="#projects">Our Projects</a></li>
@@ -32,11 +31,6 @@ export default function Navbar() {
         <a href="/consultant/login" className="nav-portal-btn designer-btn" title="Designer Portal Login">
           <UserCheck size={16} />
           <span>Designer Login</span>
-        </a>
-
-        <a href="/admin/login" className="nav-portal-btn admin-btn" title="Admin Portal Login">
-          <ShieldCheck size={16} />
-          <span>Admin Login</span>
         </a>
 
         {/* <a href="#quote" className="nav-cta-link">

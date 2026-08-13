@@ -3,6 +3,7 @@ import type { ChangeEvent } from 'react';
 import {
   Camera,
   CheckCircle2,
+  ChevronDown,
   MapPin,
   Mail,
   Palette,
@@ -31,13 +32,59 @@ const budgetRanges = [
   '₹20 Lakhs+ (Bespoke)',
 ];
 
-const stateDesignOptions = [
-  { id: 'rajasthan', name: 'Rajasthan', cue: 'Warm arches, stone, carved wood' },
-  { id: 'kerala', name: 'Kerala', cue: 'Natural timber, calm greens' },
-  { id: 'maharashtra', name: 'Maharashtra', cue: 'Urban luxury, efficient layouts' },
-  { id: 'delhi', name: 'Delhi NCR', cue: 'Contemporary classic finishes' },
-  { id: 'karnataka', name: 'Karnataka', cue: 'Modern wood, clean storage' },
-  { id: 'goa', name: 'Goa', cue: 'Airy coastal, relaxed textures' },
+export interface StateOption {
+  id: string;
+  name: string;
+  cue: string;
+  region: 'North' | 'South' | 'West' | 'East & Central' | 'North-East & Islands';
+}
+
+const stateDesignOptions: StateOption[] = [
+  // North India
+  { id: 'delhi', name: 'Delhi NCR', cue: 'Contemporary classic finishes & urban luxury', region: 'North' },
+  { id: 'rajasthan', name: 'Rajasthan', cue: 'Warm arches, stone & carved wood', region: 'North' },
+  { id: 'punjab', name: 'Punjab', cue: 'Bold arches, handcrafted wood & warm hospitality', region: 'North' },
+  { id: 'haryana', name: 'Haryana', cue: 'Structured plans & muted modern elegance', region: 'North' },
+  { id: 'himachal-pradesh', name: 'Himachal Pradesh', cue: 'Timber frames, stone character & hearths', region: 'North' },
+  { id: 'jammu-kashmir', name: 'Jammu & Kashmir', cue: 'Walnut wood, carpet textiles & carved details', region: 'North' },
+  { id: 'ladakh', name: 'Ladakh', cue: 'Mountain calm, stone tones & minimal timber', region: 'North' },
+  { id: 'uttarakhand', name: 'Uttarakhand', cue: 'Natural light, tactile wood & quiet retreat', region: 'North' },
+  { id: 'uttar-pradesh', name: 'Uttar Pradesh', cue: 'Grand rooms, carved mouldings & symmetry', region: 'North' },
+  { id: 'chandigarh', name: 'Chandigarh', cue: 'Modern lines, polished surfaces & orderly layouts', region: 'North' },
+
+  // South India
+  { id: 'kerala', name: 'Kerala', cue: 'Natural timber, tropical courtyards & calm greens', region: 'South' },
+  { id: 'karnataka', name: 'Karnataka', cue: 'Modern wood, verandahs & clean storage', region: 'South' },
+  { id: 'tamil-nadu', name: 'Tamil Nadu', cue: 'Chettinad columns & stately timber furniture', region: 'South' },
+  { id: 'telangana', name: 'Telangana', cue: 'Contemporary calm, warm tones & craft accents', region: 'South' },
+  { id: 'andhra-pradesh', name: 'Andhra Pradesh', cue: 'Soft luxury, warm finishes & regional craft', region: 'South' },
+  { id: 'puducherry', name: 'Puducherry', cue: 'Coastal calm, French colonial & sunlit rooms', region: 'South' },
+  { id: 'lakshadweep', name: 'Lakshadweep', cue: 'Coastal luxury, woven textures & sea air', region: 'South' },
+
+  // West India & UTs
+  { id: 'maharashtra', name: 'Maharashtra', cue: 'Urban luxury, wada timber depth & efficient layouts', region: 'West' },
+  { id: 'goa', name: 'Goa', cue: 'Airy coastal, Indo-Portuguese tiles & relaxed textures', region: 'West' },
+  { id: 'gujarat', name: 'Gujarat', cue: 'Courtyard pol houses, carved facades & rich textiles', region: 'West' },
+  { id: 'dadra-nagar-haveli-daman-diu', name: 'Dadra & Nagar Haveli and Daman & Diu', cue: 'Coastal light, craft detail & relaxed rooms', region: 'West' },
+
+  // East & Central India
+  { id: 'west-bengal', name: 'West Bengal', cue: 'Colonial proportion, decorative details & layered light', region: 'East & Central' },
+  { id: 'bihar', name: 'Bihar', cue: 'Earthy palette, warm timber & crafted furniture', region: 'East & Central' },
+  { id: 'jharkhand', name: 'Jharkhand', cue: 'Natural materials, grounded palette & solid joinery', region: 'East & Central' },
+  { id: 'odisha', name: 'Odisha', cue: 'Temple geometry, artisan craft & textured rooms', region: 'East & Central' },
+  { id: 'madhya-pradesh', name: 'Madhya Pradesh', cue: 'Grounded materials, layered wood & heritage cues', region: 'East & Central' },
+  { id: 'chhattisgarh', name: 'Chhattisgarh', cue: 'Natural palette, quiet detailing & generous plans', region: 'East & Central' },
+
+  // North-East & Islands
+  { id: 'assam', name: 'Assam', cue: 'Bamboo craft, cane details & natural light', region: 'North-East & Islands' },
+  { id: 'arunachal-pradesh', name: 'Arunachal Pradesh', cue: 'Local craft, warm timber & mountain calm', region: 'North-East & Islands' },
+  { id: 'meghalaya', name: 'Meghalaya', cue: 'Atmospheric wood, handcrafted scale & soft warmth', region: 'North-East & Islands' },
+  { id: 'sikkim', name: 'Sikkim', cue: 'Mountain calm, soft textures & craft focus', region: 'North-East & Islands' },
+  { id: 'nagaland', name: 'Nagaland', cue: 'Tribal craft, woven textiles & dark wood', region: 'North-East & Islands' },
+  { id: 'manipur', name: 'Manipur', cue: 'Local woods, layered textiles & calm elegance', region: 'North-East & Islands' },
+  { id: 'mizoram', name: 'Mizoram', cue: 'Woven surfaces, timber warmth & compact comfort', region: 'North-East & Islands' },
+  { id: 'tripura', name: 'Tripura', cue: 'Handcrafted spirit, warm palette & intimate rooms', region: 'North-East & Islands' },
+  { id: 'andaman-nicobar', name: 'Andaman & Nicobar Islands', cue: 'Ocean light, resort calm & relaxed sophistication', region: 'North-East & Islands' },
 ];
 
 
@@ -52,12 +99,23 @@ export default function QuoteForm({
   const [selectedStyle, setSelectedStyle] = useState<string>('Traditional Indian');
   const [selectedBudget, setSelectedBudget] = useState<string>('₹5 Lakhs - ₹10 Lakhs');
   const [selectedState, setSelectedState] = useState<string>('Rajasthan');
+  const [stateSearchQuery, setStateSearchQuery] = useState<string>('');
+  const [selectedRegionFilter, setSelectedRegionFilter] = useState<string>('All');
   const [customPrompt, setCustomPrompt] = useState<string>('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isStatePickerModalOpen, setIsStatePickerModalOpen] = useState(false);
+  const [isStep2Expanded, setIsStep2Expanded] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationProgress, setGenerationProgress] = useState(0);
   const [generationStepText, setGenerationStepText] = useState('');
   const [isSuccessState, setIsSuccessState] = useState(false);
+
+  const filteredStates = stateDesignOptions.filter((st) => {
+    const matchesRegion = selectedRegionFilter === 'All' || st.region === selectedRegionFilter;
+    const matchesSearch = st.name.toLowerCase().includes(stateSearchQuery.toLowerCase()) ||
+                          st.cue.toLowerCase().includes(stateSearchQuery.toLowerCase());
+    return matchesRegion && matchesSearch;
+  });
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const cameraInputRef = useRef<HTMLInputElement | null>(null);
@@ -136,6 +194,7 @@ export default function QuoteForm({
   const resetFormState = () => {
     setIsSuccessState(false);
     setIsGenerating(false);
+    setIsStep2Expanded(false);
     setUploadedImage(null);
   };
 
@@ -163,11 +222,11 @@ export default function QuoteForm({
 
           <div className="quote-gradient-accent-line" aria-hidden="true" />
 
-          <div className="quote-description-glass-pill">
+          {/* <div className="quote-description-glass-pill">
             <p>
               Whether you have a complete blueprints breakdown or just a vision of your next project, our team is ready to design a home that feels uniquely yours.
             </p>
-          </div>
+          </div> */}
 
           <div className="quote-header-spec-pills">
             <span className="spec-pill">⚡ Instant AI 3D Blueprints</span>
@@ -279,12 +338,12 @@ export default function QuoteForm({
                 <span className="gen-percentage">{generationProgress}% Completed</span>
               </div>
             ) : (
-              /* Step Form View */
+              /* Step Form View (2-Stage Flow) */
               <div className="studio-form-steps">
-                <div className="studio-steps-2col">
-                  {/* Left Column: Step 1 & Step 3 */}
-                  <div className="studio-col">
-                    {/* Step 1: Upload Image or Camera */}
+                {/* Stage 1: Initial 2 Inputs on Landing Page */}
+                <div className="studio-steps-stage1">
+                  <div className="studio-steps-2col">
+                    {/* Input 1: Upload Image or Camera */}
                     <div className="studio-step-block">
                       <label className="step-block-label">
                         <span className="block-num">1</span>
@@ -308,7 +367,6 @@ export default function QuoteForm({
                         </div>
                       ) : (
                         <div className="upload-options-wrapper">
-                          {/* Hidden Inputs */}
                           <input
                             type="file"
                             accept="image/*"
@@ -325,7 +383,6 @@ export default function QuoteForm({
                             onChange={handleFileChange}
                           />
 
-                          {/* Dropzone Dual Buttons */}
                           <div className="dropzone-box compact">
                             <div className="dropzone-actions">
                               <button
@@ -347,32 +404,15 @@ export default function QuoteForm({
                             </div>
                             <span className="dropzone-hint">JPG, PNG, WEBP • Max 15MB</span>
                           </div>
-
-                          {/* Sample Image Selectors */}
-                          {/* <div className="sample-rooms-picker">
-                            <span className="sample-label">Sample Room:</span>
-                            <div className="sample-pills">
-                              {sampleRooms.map((sample) => (
-                                <button
-                                  key={sample.name}
-                                  type="button"
-                                  className="sample-pill-btn"
-                                  onClick={() => setUploadedImage(sample.path)}
-                                >
-                                  <ImageIcon size={13} /> {sample.name}
-                                </button>
-                              ))}
-                            </div>
-                          </div> */}
                         </div>
                       )}
                     </div>
 
-                    {/* Step 3: AI Custom Design Prompt */}
+                    {/* Input 2: Custom AI Prompt & Vision */}
                     <div className="studio-step-block">
                       <label className="step-block-label">
-                        <span className="block-num">3</span>
-                        <span>Custom AI Prompt &amp; Vision (Optional)</span>
+                        <span className="block-num">2</span>
+                        <span>Custom AI Prompt &amp; Room Vision</span>
                       </label>
 
                       <div className="prompt-input-wrapper">
@@ -401,95 +441,120 @@ export default function QuoteForm({
                       </div>
                     </div>
                   </div>
+                </div>
 
-                  {/* Right Column: Step 2 & Step 4 */}
-                  <div className="studio-col">
-                    {/* Step 2: Select Design Type */}
-                    <div className="studio-step-block">
-                      <label className="step-block-label">
-                        <span className="block-num">2</span>
-                        <span>Select Design Style &amp; Mood</span>
-                      </label>
+                {/* Stage 1 Action Button: Click to Open Remaining 3 Inputs */}
+                {!isStep2Expanded && (
+                  <div className="studio-submit-block">
+                    <button
+                      type="button"
+                      className="generate-ai-btn"
+                      onClick={() => setIsStep2Expanded(true)}
+                    >
+                      <Wand2 size={20} />
+                      <span>Generate AI Design &amp; Configure Renders</span>
+                    </button>
+                    <span className="submit-subtext">Click to customize design style, budget &amp; regional state preference</span>
+                  </div>
+                )}
 
-                      <div className="design-styles-grid compact">
-                        {designStyles.map((style) => (
+                {/* Stage 2 (Expanded View): Remaining 3 Inputs + Final Submit */}
+                {isStep2Expanded && (
+                  <div className="studio-steps-stage2 anim-fade-in">
+                    <div className="studio-steps-2col margin-top-space">
+                      <div className="studio-col">
+                        {/* Input 3: Select Design Style */}
+                        <div className="studio-step-block">
+                          <label className="step-block-label">
+                            <span className="block-num">3</span>
+                            <span>Select Design Style &amp; Mood</span>
+                          </label>
+
+                          <div className="design-styles-grid compact">
+                            {designStyles.map((style) => (
+                              <button
+                                key={style.id}
+                                type="button"
+                                className={`style-card-btn compact ${selectedStyle === style.name ? 'active' : ''}`}
+                                onClick={() => setSelectedStyle(style.name)}
+                              >
+                                <div className="style-card-header">
+                                  <Palette size={15} className="style-card-icon" />
+                                  <span className="style-name">{style.name}</span>
+                                </div>
+                                <span className="style-tagline">{style.tagline}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="studio-col">
+                        {/* Input 4: Estimated Investment */}
+                        <div className="studio-step-block">
+                          <label className="step-block-label">
+                            <span className="block-num">4</span>
+                            <span>Estimated Investment &amp; Scope</span>
+                          </label>
+
+                          <div className="budget-pills-row compact">
+                            {budgetRanges.map((budget) => (
+                              <button
+                                key={budget}
+                                type="button"
+                                className={`budget-pill-btn compact ${selectedBudget === budget ? 'active' : ''}`}
+                                onClick={() => setSelectedBudget(budget)}
+                              >
+                                {budget}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Input 5: Choose Regional Design Direction */}
+                        <div className="studio-step-block">
+                          <label className="step-block-label">
+                            <span className="block-num">5</span>
+                            <span>Choose Regional Design Direction</span>
+                          </label>
+
                           <button
-                            key={style.id}
                             type="button"
-                            className={`style-card-btn compact ${selectedStyle === style.name ? 'active' : ''}`}
-                            onClick={() => setSelectedStyle(style.name)}
+                            className="state-picker-trigger-btn"
+                            onClick={() => setIsStatePickerModalOpen(true)}
                           >
-                            <div className="style-card-header">
-                              <Palette size={15} className="style-card-icon" />
-                              <span className="style-name">{style.name}</span>
+                            <div className="state-trigger-info">
+                              <MapPin size={18} className="state-trigger-pin" />
+                              <div className="state-trigger-labels">
+                                <span className="state-trigger-sub">Selected Regional Mood:</span>
+                                <strong className="state-trigger-title">{selectedState}</strong>
+                              </div>
                             </div>
-                            <span className="style-tagline">{style.tagline}</span>
+
+                            <div className="state-trigger-action">
+                              <span>Choose State / UT ({stateDesignOptions.length} Regions)</span>
+                              <ChevronDown size={16} />
+                            </div>
                           </button>
-                        ))}
+                        </div>
                       </div>
                     </div>
 
-                    {/* Step 4: Select Budget & Service */}
-                    <div className="studio-step-block">
-                      <label className="step-block-label">
-                        <span className="block-num">4</span>
-                        <span>Estimated Investment &amp; Scope</span>
-                      </label>
-
-                      <div className="budget-pills-row compact">
-                        {budgetRanges.map((budget) => (
-                          <button
-                            key={budget}
-                            type="button"
-                            className={`budget-pill-btn compact ${selectedBudget === budget ? 'active' : ''}`}
-                            onClick={() => setSelectedBudget(budget)}
-                          >
-                            {budget}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Step 5: Choose Regional Design Direction */}
-                    <div className="studio-step-block">
-                      <label className="step-block-label">
-                        <span className="block-num">5</span>
-                        <span>Choose State-Inspired Design Direction</span>
-                      </label>
-
-                      <div className="state-design-grid compact">
-                        {stateDesignOptions.map((state) => (
-                          <button
-                            key={state.id}
-                            type="button"
-                            className={`state-design-btn ${selectedState === state.name ? 'active' : ''}`}
-                            onClick={() => setSelectedState(state.name)}
-                          >
-                            <div className="state-design-name">
-                              <MapPin size={14} />
-                              <span>{state.name}</span>
-                            </div>
-                            <span className="state-design-cue">{state.cue}</span>
-                          </button>
-                        ))}
-                      </div>
+                    {/* Final Submit Action Button */}
+                    <div className="studio-submit-block">
+                      <button
+                        type="button"
+                        className="generate-ai-btn final-submit-btn"
+                        onClick={handleGenerateClick}
+                        disabled={isSubmitting}
+                      >
+                        <Wand2 size={20} />
+                        <span>Submit AI Design Request &amp; Get Consultation</span>
+                      </button>
+                      <span className="submit-subtext">Free 1-on-1 Certified Architect Consultation Included</span>
                     </div>
                   </div>
-                </div>
-
-                {/* Submit Action Button */}
-                <div className="studio-submit-block">
-                  <button
-                    type="button"
-                    className="generate-ai-btn"
-                    onClick={handleGenerateClick}
-                    disabled={isSubmitting}
-                  >
-                    <Wand2 size={20} />
-                    <span>Generate AI Design &amp; Get Consultation</span>
-                  </button>
-                  <span className="submit-subtext">Free 1-on-1 Certified Architect Consultation Included</span>
-                </div>
+                )}
               </div>
             )}
           </div>
@@ -595,6 +660,78 @@ export default function QuoteForm({
                 <span>Confirm &amp; Generate AI Render</span>
               </button>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* 36 States & UTs Picker Modal */}
+      {isStatePickerModalOpen && (
+        <div className="lead-modal-backdrop" onClick={() => setIsStatePickerModalOpen(false)}>
+          <div className="state-picker-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <div className="modal-title-group">
+                <MapPin size={20} className="modal-sparkle" />
+                <h3>Choose Regional Design Direction ({stateDesignOptions.length} States &amp; UTs)</h3>
+              </div>
+              <button
+                type="button"
+                className="modal-close-btn"
+                onClick={() => setIsStatePickerModalOpen(false)}
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Search & Region Filter Bar */}
+            <div className="state-filter-controls modal-filter-bar">
+              <input
+                type="text"
+                placeholder="🔍 Search all 36 States & UTs (e.g. Goa, Kerala, Delhi...)"
+                value={stateSearchQuery}
+                onChange={(e) => setStateSearchQuery(e.target.value)}
+                className="state-search-input"
+                autoFocus
+              />
+              <div className="region-filter-tabs">
+                {['All', 'North', 'South', 'West', 'East & Central', 'North-East & Islands'].map((region) => (
+                  <button
+                    key={region}
+                    type="button"
+                    className={`region-tab-btn ${selectedRegionFilter === region ? 'active' : ''}`}
+                    onClick={() => setSelectedRegionFilter(region)}
+                  >
+                    {region}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Scrollable Grid of 36 Regions */}
+            <div className="state-design-grid compact modal-state-grid">
+              {filteredStates.map((state) => (
+                <button
+                  key={state.id}
+                  type="button"
+                  className={`state-design-btn ${selectedState === state.name ? 'active' : ''}`}
+                  onClick={() => {
+                    setSelectedState(state.name);
+                    setIsStatePickerModalOpen(false);
+                  }}
+                >
+                  <div className="state-design-name">
+                    <MapPin size={14} />
+                    <span>{state.name}</span>
+                    <span className="state-region-badge">{state.region}</span>
+                  </div>
+                  <span className="state-design-cue">{state.cue}</span>
+                </button>
+              ))}
+              {filteredStates.length === 0 && (
+                <div className="no-state-found-msg">
+                  No region found matching &quot;{stateSearchQuery}&quot;
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}

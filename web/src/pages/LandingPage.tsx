@@ -3,6 +3,8 @@ import BeforeAfter from '../components/BeforeAfter';
 import ExploreIndiaInteriors from '../components/ExploreIndiaInteriors';
 import Footer from '../components/Footer';
 import Hero from '../components/Hero';
+import HeroReviewStrip from '../components/HeroReviewStrip';
+import MobileAppBanner from '../components/MobileAppBanner';
 import ProjectsSlider from '../components/ProjectsSlider';
 import QuoteForm from '../components/QuoteForm';
 import ReviewsPanel from '../components/ReviewsPanel';
@@ -255,6 +257,7 @@ export default function LandingPage() {
   return (
     <div className="home-page">
       <Hero stats={stats} />
+      <HeroReviewStrip />
       <ProjectsSlider
         projects={projects}
         currentSlide={currentSlide}
@@ -263,7 +266,6 @@ export default function LandingPage() {
         handlePrevSlide={handlePrevSlide}
         handleNextSlide={handleNextSlide}
       />
-      <ReviewsPanel />
       <BeforeAfter />
       <QuoteForm
         formData={formData}
@@ -274,6 +276,8 @@ export default function LandingPage() {
       />
       <ExploreIndiaInteriors />
       <Steps />
+      <ReviewsPanel />
+      <MobileAppBanner />
       <Footer />
     </div>
   );

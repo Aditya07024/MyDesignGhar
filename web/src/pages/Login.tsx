@@ -4,6 +4,7 @@ import { useSignIn, useAuth } from "@clerk/clerk-react";
 import { Eye, EyeOff, Apple } from "lucide-react";
 import { AuthService, setSessionToken } from "../services/api";
 import logo from "../assets/logo.png";
+import AdminPasskeyModal from "../components/AdminPasskeyModal";
 
 interface LoginProps {
   isAdminOnly?: boolean;
@@ -13,6 +14,11 @@ export default function Login({ isAdminOnly = false }: LoginProps) {
   const navigate = useNavigate();
   const { isLoaded, signIn, setActive } = useSignIn();
   const { getToken, isSignedIn } = useAuth();
+
+  const [isPasskeyVerified, setIsPasskeyVerified] = useState<boolean>(() => {
+    if (!isAdminOnly) return true;
+    return sessionStorage.getItem("admin_gate_verified") === "true";
+  });
   
   const [roleType] = useState<"CONSULTANT" | "ADMIN">(
     isAdminOnly ? "ADMIN" : "CONSULTANT"
@@ -174,6 +180,16 @@ export default function Login({ isAdminOnly = false }: LoginProps) {
       setLoading(false);
     }
   };
+
+  if (isAdminOnly && !isPasskeyVerified) {
+    return (
+      <AdminPasskeyModal
+        isOpen={true}
+        onClose={() => navigate("/")}
+        onSuccess={() => setIsPasskeyVerified(true)}
+      />
+    );
+  }
 
   return (
     <div className="auth-container animate-fade-in">

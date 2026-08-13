@@ -7,9 +7,9 @@
   --card: rgba(255, 255, 255, 0.85);
   --card-solid: #ffffff;
   --card-border: rgba(0, 0, 0, 0.06);
-  --primary: #cda250; /* Luxury gold */
-  --primary-hover: #b88f3e;
-  --primary-rgb: 205, 162, 80;
+  --primary: #5c2828; /* Deep Wine Burgundy */
+  --primary-hover: #451d1d;
+  --primary-rgb: 92, 40, 40;
   --text: #1b1e24;
   --text-muted: #6b7280;
   --border: rgba(0, 0, 0, 0.08);
