@@ -1,4 +1,4 @@
-import { Star, ShieldCheck, Sparkles, Trophy, CheckCircle2, TrendingUp, Zap, Award } from 'lucide-react';
+import { Star, ShieldCheck, Trophy, CheckCircle2, TrendingUp, Zap, Award } from 'lucide-react';
 
 interface StripDataItem {
   id: string;

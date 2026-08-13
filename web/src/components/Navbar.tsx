@@ -1,4 +1,4 @@
-import { ChevronDown, UserCheck, ShieldCheck } from 'lucide-react';
+import { ChevronDown, UserCheck } from 'lucide-react';
 import logo from '../assets/logo.png';
 
 export default function Navbar() {
