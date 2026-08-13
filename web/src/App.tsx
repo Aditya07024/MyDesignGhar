@@ -57,7 +57,7 @@ function AuthLoadingScreen({ message }: { message: string }) {
       <div className="auth-sync-glass-card">
         {/* Top Brand Logo */}
         <div className="auth-brand-badge">
-          <span className="auth-brand-symbol">📐</span>
+
           <span className="auth-brand-text">MY<span className="auth-brand-highlight">DESIGNGHAR</span></span>
         </div>
 
