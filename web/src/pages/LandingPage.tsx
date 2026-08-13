@@ -5,6 +5,7 @@ import Footer from '../components/Footer';
 import Hero from '../components/Hero';
 import ProjectsSlider from '../components/ProjectsSlider';
 import QuoteForm from '../components/QuoteForm';
+import ReviewsPanel from '../components/ReviewsPanel';
 import Steps from '../components/Steps';
 import type {
   PartialStats,
@@ -262,6 +263,7 @@ export default function LandingPage() {
         handlePrevSlide={handlePrevSlide}
         handleNextSlide={handleNextSlide}
       />
+      <ReviewsPanel />
       <BeforeAfter />
       <QuoteForm
         formData={formData}

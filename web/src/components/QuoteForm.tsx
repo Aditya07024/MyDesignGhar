@@ -3,6 +3,7 @@ import type { ChangeEvent } from 'react';
 import {
   Camera,
   CheckCircle2,
+  MapPin,
   Mail,
   Palette,
   Phone,
@@ -30,6 +31,15 @@ const budgetRanges = [
   '₹20 Lakhs+ (Bespoke)',
 ];
 
+const stateDesignOptions = [
+  { id: 'rajasthan', name: 'Rajasthan', cue: 'Warm arches, stone, carved wood' },
+  { id: 'kerala', name: 'Kerala', cue: 'Natural timber, calm greens' },
+  { id: 'maharashtra', name: 'Maharashtra', cue: 'Urban luxury, efficient layouts' },
+  { id: 'delhi', name: 'Delhi NCR', cue: 'Contemporary classic finishes' },
+  { id: 'karnataka', name: 'Karnataka', cue: 'Modern wood, clean storage' },
+  { id: 'goa', name: 'Goa', cue: 'Airy coastal, relaxed textures' },
+];
+
 
 
 export default function QuoteForm({
@@ -41,6 +51,7 @@ export default function QuoteForm({
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [selectedStyle, setSelectedStyle] = useState<string>('Traditional Indian');
   const [selectedBudget, setSelectedBudget] = useState<string>('₹5 Lakhs - ₹10 Lakhs');
+  const [selectedState, setSelectedState] = useState<string>('Rajasthan');
   const [customPrompt, setCustomPrompt] = useState<string>('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -70,6 +81,7 @@ export default function QuoteForm({
       ...formData,
       style: selectedStyle,
       budget: selectedBudget,
+      statePreference: selectedState,
       service: 'AI Room Styling (Waitlist)',
       imageUrl: uploadedImage || undefined,
     };
@@ -221,6 +233,14 @@ export default function QuoteForm({
                     <div className="summary-card-content">
                       <span className="summary-card-label">Budget Range</span>
                       <strong className="summary-card-value">{selectedBudget}</strong>
+                    </div>
+                  </div>
+
+                  <div className="summary-grid-card state-card">
+                    <div className="summary-card-icon">📍</div>
+                    <div className="summary-card-content">
+                      <span className="summary-card-label">Regional Design Direction</span>
+                      <strong className="summary-card-value">{selectedState}</strong>
                     </div>
                   </div>
 
@@ -425,6 +445,31 @@ export default function QuoteForm({
                             onClick={() => setSelectedBudget(budget)}
                           >
                             {budget}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Step 5: Choose Regional Design Direction */}
+                    <div className="studio-step-block">
+                      <label className="step-block-label">
+                        <span className="block-num">5</span>
+                        <span>Choose State-Inspired Design Direction</span>
+                      </label>
+
+                      <div className="state-design-grid compact">
+                        {stateDesignOptions.map((state) => (
+                          <button
+                            key={state.id}
+                            type="button"
+                            className={`state-design-btn ${selectedState === state.name ? 'active' : ''}`}
+                            onClick={() => setSelectedState(state.name)}
+                          >
+                            <div className="state-design-name">
+                              <MapPin size={14} />
+                              <span>{state.name}</span>
+                            </div>
+                            <span className="state-design-cue">{state.cue}</span>
                           </button>
                         ))}
                       </div>
