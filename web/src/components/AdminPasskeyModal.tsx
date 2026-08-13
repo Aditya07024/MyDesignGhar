@@ -69,7 +69,7 @@ export default function AdminPasskeyModal({ isOpen, onClose, onSuccess }: AdminP
             <Lock size={18} className="input-lock-icon" />
             <input
               type="password"
-              placeholder="Enter Passkey (123456789)"
+              placeholder="Enter Passkey"
               value={passkey}
               onChange={(e) => setPasskey(e.target.value)}
               className="admin-passkey-input"
