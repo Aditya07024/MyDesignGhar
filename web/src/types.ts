@@ -4,6 +4,7 @@ export interface ProjectDetails {
   area: string;
   duration: string;
   style: string;
+  location?: string;
 }
 
 export interface Project {

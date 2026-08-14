@@ -1,4 +1,4 @@
-import { Star, ShieldCheck, Trophy, CheckCircle2, TrendingUp, Zap, Award } from 'lucide-react';
+import { ShieldCheck, Trophy, CheckCircle2, TrendingUp, Zap, Award } from 'lucide-react';
 
 interface StripDataItem {
   id: string;
@@ -13,12 +13,12 @@ interface StripDataItem {
 const stripDataItems: StripDataItem[] = [
   {
     id: '1',
-    type: 'review',
-    icon: Star,
-    iconColor: '#fbbf24',
-    badge: 'CLIENT REVIEW',
-    title: 'Aarav Mehta (Gurugram)',
-    text: '"Final home feels calm, ultra-premium & practical for family use. 5/5 Stars!"',
+    type: 'feature',
+    icon: ShieldCheck,
+    iconColor: '#34d399',
+    badge: 'WARRANTY',
+    title: '10-Year Studio Warranty',
+    text: 'On all modular cabinetry and premium fittings',
   },
   {
     id: '2',
@@ -49,12 +49,12 @@ const stripDataItems: StripDataItem[] = [
   },
   {
     id: '5',
-    type: 'review',
-    icon: Star,
-    iconColor: '#fbbf24',
-    badge: 'CLIENT REVIEW',
-    title: 'Isha Rao (Bengaluru)',
-    text: '"Visual planning made decisions easy! Saw exact lighting & storage flow before execution."',
+    type: 'trending',
+    icon: TrendingUp,
+    iconColor: '#a7f3d0',
+    badge: 'MATERIALS',
+    title: 'German Plywood & Hardware',
+    text: 'Using high-moisture resistant premium core materials',
   },
   {
     id: '6',
@@ -70,18 +70,18 @@ const stripDataItems: StripDataItem[] = [
     type: 'stat',
     icon: Award,
     iconColor: '#fbbf24',
-    badge: 'TOP RATED',
-    title: '4.9 / 5.0 Rating',
-    text: 'Verified by over 250+ satisfied homeowners across India',
+    badge: 'COVERAGE',
+    title: 'Pan-India Operations',
+    text: 'Full-service design execution across 25+ cities in India',
   },
   {
     id: '8',
-    type: 'review',
-    icon: Star,
-    iconColor: '#fbbf24',
-    badge: 'CLIENT REVIEW',
-    title: 'Rohan Kapoor (Mumbai)',
-    text: '"Polished process from consultation to handover. Master suite looks straight out of a magazine."',
+    type: 'feature',
+    icon: Zap,
+    iconColor: '#60a5fa',
+    badge: 'DELIVERY',
+    title: '45-Day Delivery Promise',
+    text: 'From final design sign-off to site installation or cash back',
   },
 ];
 

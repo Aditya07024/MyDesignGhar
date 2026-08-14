@@ -3,8 +3,6 @@ import {
   ArrowRight,
   ChevronLeft,
   ChevronRight,
-  Sparkles,
-  Star,
   Trophy,
 } from 'lucide-react';
 import type { ProjectsSliderProps } from '../types';
@@ -101,33 +99,17 @@ export default function ProjectsSlider({
                   <h3 className="slide-title anim-stagger-2">{project.title}</h3>
                   <p className="slide-desc anim-stagger-3">{project.description}</p>
 
-                  <div className="slide-tags anim-stagger-4">
-                    {project.tags.map((tag) => (
-                      <span key={tag} className="slide-tag">
-                        <Sparkles size={12} className="tag-icon" /> {tag}
-                      </span>
-                    ))}
-                  </div>
-
                   {/* Spec Grid */}
                   <div className="slide-details-grid anim-stagger-5">
                     <div className="slide-spec-box">
+                      <div className="slide-detail-label">Location</div>
+                      <div className="slide-detail-val">
+                        {project.details.location || 'India'}
+                      </div>
+                    </div>
+                    <div className="slide-spec-box">
                       <div className="slide-detail-label">Area Size</div>
                       <div className="slide-detail-val">{project.details.area}</div>
-                    </div>
-                    <div className="slide-spec-box">
-                      <div className="slide-detail-label">Duration</div>
-                      <div className="slide-detail-val">{project.details.duration}</div>
-                    </div>
-                    <div className="slide-spec-box">
-                      <div className="slide-detail-label">Est. Style</div>
-                      <div className="slide-detail-val">{project.details.style}</div>
-                    </div>
-                    <div className="slide-spec-box">
-                      <div className="slide-detail-label">Rating</div>
-                      <div className="slide-detail-val rating">
-                        <Star size={14} className="star-icon" fill="currentColor" /> 4.9 / 5
-                      </div>
                     </div>
                   </div>
 
