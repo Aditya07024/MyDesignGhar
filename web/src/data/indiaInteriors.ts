@@ -38,12 +38,7 @@ const palette = [
   '#d5d8b8',
 ];
 
-const buildImages = (id: string) => ([
-  `/images/india-interiors/${id}/01.jpg`,
-  `/images/india-interiors/${id}/02.jpg`,
-  `/images/india-interiors/${id}/03.jpg`,
-  `/images/india-interiors/${id}/04.jpg`,
-]);
+const buildImages = (id: string) => buildSplitCollageImages(id);
 
 const buildSplitCollageImages = (id: string) => ([
   `/images/india-interiors-split/${id}/01.png`,
