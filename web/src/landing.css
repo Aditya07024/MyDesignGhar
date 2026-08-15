@@ -386,14 +386,14 @@ section.hero,
   flex: 1;
   display: flex;
   align-items: flex-end;
-  padding-bottom: 140px;
+  padding-bottom: 65px;
   padding-left: 10px;
- 
 }
 
 .hero-left-cta-box {
   position: relative;
   z-index: 5;
+  margin-top: 25px;
 }
 
 .hero-cta {
@@ -4630,7 +4630,7 @@ footer {
   }
   .hero-left-cta-box {
     position: absolute !important;
-    bottom: 16px !important;
+    bottom: 12px !important;
     left: 50% !important;
     transform: translateX(-50%) !important;
     width: auto !important;
