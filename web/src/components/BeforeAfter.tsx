@@ -301,17 +301,39 @@ export default function BeforeAfter() {
                 </button>
               </div>
             ) : isGenerating ? (
-              /* Generating Loader View */
-              <div className="ai-generating-view" style={{ padding: '24px 12px', textAlign: 'center' }}>
-                <div className="gen-loader-spinner" style={{ display: 'flex', justifyContent: 'center', marginBottom: '16px' }}>
-                  <Wand2 size={36} style={{ color: '#5c2828' }} />
+              /* Redesigned AI Generator Theme Loader View */
+              <div className="ai-generating-view">
+                <div className="loader-ring-wrapper">
+                  <div className="loader-ring-outer" />
+                  <div className="loader-ring-inner" />
+                  <div className="loader-icon-glow">
+                    <Wand2 size={24} />
+                  </div>
                 </div>
-                <h3 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f172a', marginBottom: '8px' }}>Generating Your AI Space Visualization</h3>
-                <p style={{ fontSize: '0.84rem', color: '#64748b', marginBottom: '16px' }}>{generationStepText}</p>
-                <div style={{ background: '#e2e8f0', borderRadius: '10px', height: '10px', width: '100%', overflow: 'hidden', marginBottom: '8px' }}>
-                  <div style={{ background: 'linear-gradient(90deg, #5c2828, #ef4444)', height: '100%', width: `${generationProgress}%`, transition: 'width 0.4s ease' }} />
+
+                <h3 className="loader-title">Generating AI Spatial Visualization</h3>
+
+                <div className="loader-step-badge">
+                  <Sparkles size={13} className="badge-icon" />
+                  <span>{generationStepText}</span>
                 </div>
-                <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#5c2828' }}>{generationProgress}% Completed</span>
+
+                <div className="loader-progress-container">
+                  <div className="loader-progress-track">
+                    <div
+                      className="loader-progress-fill"
+                      style={{ width: `${generationProgress}%` }}
+                    />
+                  </div>
+                </div>
+
+                <div className="loader-footer-meta">
+                  <div className="loader-live-tag">
+                    <span className="live-dot" />
+                    <span>AI Engine Processing</span>
+                  </div>
+                  <span className="loader-percent">{generationProgress}% Completed</span>
+                </div>
               </div>
             ) : (
               /* Step 1 & 2 Main Card Form */
