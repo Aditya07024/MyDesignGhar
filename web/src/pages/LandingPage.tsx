@@ -6,15 +6,11 @@ import Hero from '../components/Hero';
 import HeroReviewStrip from '../components/HeroReviewStrip';
 import MobileAppBanner from '../components/MobileAppBanner';
 import ProjectsSlider from '../components/ProjectsSlider';
-import ReviewsPanel from '../components/ReviewsPanel';
 import Steps from '../components/Steps';
 import type {
   PartialStats,
   Project,
-  QuoteFormData,
-  QuoteInputChangeEvent,
   Stats,
-  SubmitStatus,
 } from '../types';
 
 const fallbackProjects: Project[] = [
@@ -72,28 +68,11 @@ const fallbackStats: Stats = {
   awards: { value: 11, suffix: '', label: 'Designs that earn awards' },
 };
 
-const initialFormData: QuoteFormData = {
-  name: '',
-  email: '',
-  phone: '',
-  service: 'AI Room Styling',
-  budget: '$5,000 - $10,000',
-  message: '',
-};
-
-interface QuoteResponse {
-  message?: string;
-  error?: string;
-}
-
 export default function LandingPage() {
   const [projects, setProjects] = useState<Project[]>(fallbackProjects);
   const [stats, setStats] = useState<PartialStats>(fallbackStats);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [progressWidth, setProgressWidth] = useState(0);
-  const [formData, setFormData] = useState<QuoteFormData>(initialFormData);
-  const [submitStatus, setSubmitStatus] = useState<SubmitStatus | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const slideDuration = 6000;
   const slideTimer = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -194,74 +173,6 @@ export default function LandingPage() {
     setCurrentSlide((prev) => (prev - 1 + projects.length) % projects.length);
   };
 
-  const handleInputChange = (event: QuoteInputChangeEvent) => {
-    const { name, value } = event.target;
-
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleFormSubmit = async (event: any, overridePayload?: any) => {
-    if (event && typeof event.preventDefault === 'function') {
-      event.preventDefault();
-    }
-    setIsSubmitting(true);
-    setSubmitStatus(null);
-
-    const submissionData = overridePayload || formData;
-
-    // Local Storage Database Fallback (always saves locally so zero requests are ever lost)
-    try {
-      const existingStr = localStorage.getItem('mdg_feature_requests') || '[]';
-      const existingList = JSON.parse(existingStr);
-      existingList.push({
-        ...submissionData,
-        submittedAt: new Date().toISOString(),
-        id: Date.now(),
-      });
-      localStorage.setItem('mdg_feature_requests', JSON.stringify(existingList));
-    } catch (lsErr) {
-      console.warn('LocalStorage save error:', lsErr);
-    }
-
-    try {
-      // Attempt 1: Backend API (port 5001)
-      let response = await fetch('http://localhost:5001/api/quote', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(submissionData),
-      }).catch(() => null);
-
-      // Attempt 2: Port 5000 fallback
-      if (!response || !response.ok) {
-        response = await fetch('http://localhost:5000/api/quote', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(submissionData),
-        }).catch(() => null);
-      }
-
-      if (response && response.ok) {
-        const resData = (await response.json()) as QuoteResponse;
-        setSubmitStatus({ type: 'success', message: resData.message ?? 'Request saved to database.' });
-      } else {
-        setSubmitStatus({
-          type: 'success',
-          message: 'Your feature request has been recorded and saved!',
-        });
-      }
-      setFormData(initialFormData);
-    } catch (error) {
-      console.warn('Backend offline, saved to local database.', error);
-      setSubmitStatus({
-        type: 'success',
-        message: 'Your feature request has been saved in local storage database!',
-      });
-      setFormData(initialFormData);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
   return (
     <div className="home-page">
       <Hero stats={stats} />
@@ -277,7 +188,6 @@ export default function LandingPage() {
       <BeforeAfter />
       <ExploreIndiaInteriors />
       <Steps />
-      {/* <ReviewsPanel /> */}
       <MobileAppBanner />
       <Footer />
     </div>
