@@ -6,7 +6,6 @@ import Hero from '../components/Hero';
 import HeroReviewStrip from '../components/HeroReviewStrip';
 import MobileAppBanner from '../components/MobileAppBanner';
 import ProjectsSlider from '../components/ProjectsSlider';
-import QuoteForm from '../components/QuoteForm';
 import ReviewsPanel from '../components/ReviewsPanel';
 import Steps from '../components/Steps';
 import type {
@@ -276,16 +275,9 @@ export default function LandingPage() {
         handleNextSlide={handleNextSlide}
       />
       <BeforeAfter />
-      <QuoteForm
-        formData={formData}
-        handleInputChange={handleInputChange}
-        handleFormSubmit={handleFormSubmit}
-        submitStatus={submitStatus}
-        isSubmitting={isSubmitting}
-      />
       <ExploreIndiaInteriors />
       <Steps />
-      <ReviewsPanel />
+      {/* <ReviewsPanel /> */}
       <MobileAppBanner />
       <Footer />
     </div>
