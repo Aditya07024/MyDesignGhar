@@ -6,6 +6,7 @@ import Hero from '../components/Hero';
 import HeroReviewStrip from '../components/HeroReviewStrip';
 import MobileAppBanner from '../components/MobileAppBanner';
 import ProjectsSlider from '../components/ProjectsSlider';
+import CommunityIdeasWall from '../components/CommunityIdeasWall';
 import Steps from '../components/Steps';
 import type {
   PartialStats,
@@ -187,7 +188,9 @@ export default function LandingPage() {
       />
       <BeforeAfter />
       <ExploreIndiaInteriors />
+      <CommunityIdeasWall />
       <Steps />
+      
       <MobileAppBanner />
       <Footer />
     </div>

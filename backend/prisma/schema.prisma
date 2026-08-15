@@ -458,3 +458,16 @@ model QuoteRequest {
 
   @@map("quote_requests")
 }
+
+model CommunityIdea {
+  id        String   @id @default(uuid())
+  name      String
+  location  String   @default("India")
+  roomType  String   @map("room_type")
+  style     String
+  vision    String
+  likes     Int      @default(1)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("community_ideas")
+}

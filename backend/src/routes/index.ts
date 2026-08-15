@@ -11,6 +11,7 @@ import analyticsRoutes from "./analytics.routes";
 import storageRoutes from "./storage.routes";
 import notificationRoutes from "./notification.routes";
 import quoteRoutes from "./quote.routes";
+import ideasRoutes from "./ideas.routes";
 
 const router = Router();
 
@@ -27,5 +28,6 @@ router.use("/storage", storageRoutes);
 router.use("/notifications", notificationRoutes);
 router.use("/quote", quoteRoutes);
 router.use("/quotes", quoteRoutes);
+router.use("/ideas", ideasRoutes);
 
 export default router;
