@@ -16,9 +16,9 @@ if (!CLERK_PUBLISHABLE_KEY) {
   throw new Error("Missing Clerk Publishable Key in environment variables.");
 }
 
-// Redesigned Futuristic Architectural Auth Loading Screen
+// Redesigned Luxury Warm Brown Glassmorphism Auth Loading Screen
 function AuthLoadingScreen({ message }: { message: string }) {
-  const [percent, setPercent] = useState(15);
+  const [percent, setPercent] = useState(18);
   const [statusStep, setStatusStep] = useState(0);
 
   const statusMessages = [
@@ -31,10 +31,10 @@ function AuthLoadingScreen({ message }: { message: string }) {
   useEffect(() => {
     const interval = setInterval(() => {
       setPercent((prev) => {
-        if (prev >= 96) return 96;
-        return prev + Math.floor(Math.random() * 12) + 5;
+        if (prev >= 98) return 98;
+        return prev + Math.floor(Math.random() * 10) + 4;
       });
-    }, 280);
+    }, 240);
 
     const stepInterval = setInterval(() => {
       setStatusStep((prev) => (prev + 1) % statusMessages.length);
@@ -48,20 +48,19 @@ function AuthLoadingScreen({ message }: { message: string }) {
 
   return (
     <div className="auth-sync-screen">
-      {/* Background Animated Ambient Lights */}
-      <div className="auth-ambient-glow glow-1" />
-      <div className="auth-ambient-glow glow-2" />
-      <div className="auth-ambient-glow glow-3" />
+      {/* Dark Luxury Ambient Glow Backdrop */}
+      <div className="auth-ambient-glow glow-copper-1" />
+      <div className="auth-ambient-glow glow-copper-2" />
+      <div className="auth-ambient-glow glow-gold-center" />
 
       {/* Main Glassmorphic HUD Stage */}
       <div className="auth-sync-glass-card">
-        {/* Top Brand Logo */}
+        {/* Top Brand Badge */}
         <div className="auth-brand-badge">
-
           <span className="auth-brand-text">MY<span className="auth-brand-highlight">DESIGNGHAR</span></span>
         </div>
 
-        {/* Counter-Rotating 3D Architectural Scanner Centerpiece */}
+        {/* 3D Architectural Scanner Centerpiece */}
         <div className="auth-scanner-stage">
           <div className="loader-ring-outer" />
           <div className="loader-ring-middle" />
@@ -74,7 +73,11 @@ function AuthLoadingScreen({ message }: { message: string }) {
 
         {/* Dynamic Title & Subtitle */}
         <h3 className="auth-sync-title">{message}</h3>
-        <p className="auth-sync-subtitle">{statusMessages[statusStep]}</p>
+        
+        <div className="auth-step-pill">
+          <span className="auth-step-dot" />
+          <span>{statusMessages[statusStep]}</span>
+        </div>
 
         {/* Laser Progress Bar & Glow Counter */}
         <div className="auth-progress-wrapper">
@@ -103,7 +106,7 @@ function AuthLoadingScreen({ message }: { message: string }) {
           display: flex;
           align-items: center;
           justify-content: center;
-          background: radial-gradient(circle at 50% 40%, #172538 0%, #0f172a 60%, #070c1b 100%);
+          background: radial-gradient(circle at 50% 35%, #2e1d1d 0%, #1a1010 60%, #0d0707 100%);
           font-family: 'Outfit', 'Inter', sans-serif;
           position: fixed;
           top: 0;
@@ -115,32 +118,32 @@ function AuthLoadingScreen({ message }: { message: string }) {
         .auth-ambient-glow {
           position: absolute;
           border-radius: 50%;
-          filter: blur(80px);
+          filter: blur(90px);
           pointer-events: none;
-          opacity: 0.35;
+          opacity: 0.45;
         }
 
-        .glow-1 {
-          width: 380px;
-          height: 380px;
+        .glow-copper-1 {
+          width: 440px;
+          height: 440px;
           background: #5c2828;
-          top: 15%;
-          left: 20%;
+          top: 10%;
+          left: 15%;
           animation: ambientFloat 8s ease-in-out infinite alternate;
         }
 
-        .glow-2 {
-          width: 440px;
-          height: 440px;
-          background: #0d9488;
-          bottom: 15%;
-          right: 20%;
+        .glow-copper-2 {
+          width: 480px;
+          height: 480px;
+          background: #753333;
+          bottom: 10%;
+          right: 15%;
           animation: ambientFloat 10s ease-in-out infinite alternate-reverse;
         }
 
-        .glow-3 {
-          width: 300px;
-          height: 300px;
+        .glow-gold-center {
+          width: 320px;
+          height: 320px;
           background: #f59e0b;
           top: 50%;
           left: 50%;
@@ -150,28 +153,28 @@ function AuthLoadingScreen({ message }: { message: string }) {
 
         @keyframes ambientFloat {
           0% { transform: translate(0, 0) scale(1); }
-          100% { transform: translate(30px, -40px) scale(1.15); }
+          100% { transform: translate(35px, -45px) scale(1.15); }
         }
 
         @keyframes pulseCenter {
-          0%, 100% { opacity: 0.15; transform: translate(-50%, -50%) scale(0.8); }
-          50% { opacity: 0.35; transform: translate(-50%, -50%) scale(1.2); }
+          0%, 100% { opacity: 0.15; transform: translate(-50%, -50%) scale(0.85); }
+          50% { opacity: 0.35; transform: translate(-50%, -50%) scale(1.25); }
         }
 
         .auth-sync-glass-card {
-          background: rgba(15, 23, 42, 0.65);
-          backdrop-filter: blur(28px);
-          -webkit-backdrop-filter: blur(28px);
-          border: 1px solid rgba(255, 255, 255, 0.14);
+          background: rgba(46, 35, 28, 0.78);
+          backdrop-filter: blur(32px);
+          -webkit-backdrop-filter: blur(32px);
+          border: 1px solid rgba(255, 255, 255, 0.18);
           border-radius: 32px;
-          padding: 48px 52px;
+          padding: 44px 48px;
           width: 90%;
-          max-width: 460px;
+          max-width: 440px;
           display: flex;
           flex-direction: column;
           align-items: center;
           text-align: center;
-          box-shadow: 0 30px 80px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+          box-shadow: 0 32px 90px rgba(0, 0, 0, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.25);
           animation: authPopIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
           position: relative;
           z-index: 10;
@@ -186,27 +189,24 @@ function AuthLoadingScreen({ message }: { message: string }) {
           display: inline-flex;
           align-items: center;
           gap: 10px;
-          margin-bottom: 30px;
-          background: rgba(255, 255, 255, 0.05);
-          border: 1px solid rgba(255, 255, 255, 0.1);
+          margin-bottom: 26px;
+          background: rgba(255, 255, 255, 0.08);
+          border: 1px solid rgba(255, 255, 255, 0.18);
           padding: 6px 18px;
           border-radius: 999px;
-        }
-
-        .auth-brand-symbol {
-          font-size: 1rem;
+          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
         }
 
         .auth-brand-text {
-          font-size: 1rem;
+          font-size: 0.95rem;
           font-weight: 900;
           letter-spacing: 2px;
           color: #ffffff;
         }
 
         .auth-brand-highlight {
-          color: #f87171;
-          background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
+          color: #f59e0b;
+          background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
         }
@@ -214,9 +214,9 @@ function AuthLoadingScreen({ message }: { message: string }) {
         /* 3D Scanner Stage */
         .auth-scanner-stage {
           position: relative;
-          width: 100px;
-          height: 100px;
-          margin-bottom: 28px;
+          width: 105px;
+          height: 105px;
+          margin-bottom: 24px;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -224,33 +224,33 @@ function AuthLoadingScreen({ message }: { message: string }) {
 
         .loader-ring-outer {
           position: absolute;
-          width: 100px;
-          height: 100px;
+          width: 105px;
+          height: 105px;
           border-radius: 50%;
-          border: 2px solid transparent;
-          border-top-color: #ef4444;
-          border-right-color: #f59e0b;
-          animation: spinRight 2.2s linear infinite;
+          border: 2px dashed rgba(245, 158, 11, 0.5);
+          border-top-color: #f59e0b;
+          border-right-color: #5c2828;
+          animation: spinRight 3s linear infinite;
         }
 
         .loader-ring-middle {
           position: absolute;
-          width: 80px;
-          height: 80px;
+          width: 86px;
+          height: 86px;
           border-radius: 50%;
           border: 2px solid transparent;
-          border-bottom-color: #34d399;
-          border-left-color: #3b82f6;
-          animation: spinLeft 1.6s linear infinite;
+          border-bottom-color: rgba(255, 255, 255, 0.85);
+          border-left-color: rgba(245, 158, 11, 0.8);
+          animation: spinLeft 2s linear infinite;
         }
 
         .loader-ring-inner {
           position: absolute;
-          width: 60px;
-          height: 60px;
+          width: 64px;
+          height: 64px;
           border-radius: 50%;
-          background: radial-gradient(circle, rgba(92, 40, 40, 0.4) 0%, transparent 70%);
-          border: 1px dashed rgba(255, 255, 255, 0.2);
+          background: radial-gradient(circle, rgba(92, 40, 40, 0.5) 0%, transparent 70%);
+          border: 1px dashed rgba(255, 255, 255, 0.25);
           animation: pulseRingInner 2s ease-in-out infinite;
         }
 
@@ -270,15 +270,15 @@ function AuthLoadingScreen({ message }: { message: string }) {
         }
 
         .auth-3d-cube-icon {
-          width: 60px;
-          height: 60px;
+          width: 58px;
+          height: 58px;
           border-radius: 50%;
           background: #ffffff;
           padding: 8px;
           display: flex;
           align-items: center;
           justify-content: center;
-          box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5), 0 0 20px rgba(248, 113, 113, 0.4);
+          box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5), 0 0 24px rgba(245, 158, 11, 0.4);
           position: relative;
           z-index: 5;
           animation: floatIcon 3s ease-in-out infinite alternate;
@@ -297,26 +297,41 @@ function AuthLoadingScreen({ message }: { message: string }) {
         }
 
         .auth-sync-title {
-          color: #f8fafc;
-          font-size: 1.25rem;
+          color: #ffffff;
+          font-size: 1.2rem;
           font-weight: 800;
-          margin: 0 0 6px 0;
+          margin: 0 0 12px 0;
           letter-spacing: -0.3px;
         }
 
-        .auth-sync-subtitle {
-          color: #94a3b8;
-          font-size: 0.85rem;
-          margin: 0 0 28px 0;
-          line-height: 1.45;
-          min-height: 24px;
+        .auth-step-pill {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          background: rgba(255, 255, 255, 0.08);
+          border: 1px solid rgba(255, 255, 255, 0.16);
+          padding: 5px 14px;
+          border-radius: 20px;
+          font-size: 0.8rem;
+          font-weight: 600;
+          color: rgba(255, 255, 255, 0.9);
+          margin-bottom: 24px;
           transition: all 0.3s ease;
+        }
+
+        .auth-step-dot {
+          width: 7px;
+          height: 7px;
+          border-radius: 50%;
+          background: #f59e0b;
+          box-shadow: 0 0 8px #f59e0b;
+          animation: pulseDot 1.5s infinite;
         }
 
         /* Progress Bar HUD */
         .auth-progress-wrapper {
           width: 100%;
-          margin-bottom: 24px;
+          margin-bottom: 20px;
         }
 
         .auth-progress-header {
@@ -327,34 +342,34 @@ function AuthLoadingScreen({ message }: { message: string }) {
         }
 
         .auth-progress-label {
-          font-size: 0.7rem;
+          font-size: 0.72rem;
           font-weight: 800;
           letter-spacing: 1px;
-          color: #64748b;
+          color: rgba(255, 255, 255, 0.7);
         }
 
         .auth-progress-percentage {
-          font-size: 0.82rem;
+          font-size: 0.86rem;
           font-weight: 900;
-          color: #34d399;
+          color: #f59e0b;
           letter-spacing: 0.5px;
         }
 
         .auth-progress-bar-container {
           width: 100%;
-          height: 8px;
-          background: rgba(255, 255, 255, 0.07);
+          height: 10px;
+          background: rgba(0, 0, 0, 0.4);
           border-radius: 999px;
           overflow: hidden;
           position: relative;
-          border: 1px solid rgba(255, 255, 255, 0.08);
+          border: 1px solid rgba(255, 255, 255, 0.15);
         }
 
         .auth-progress-bar-fill {
           height: 100%;
-          background: linear-gradient(90deg, #5c2828 0%, #ef4444 50%, #34d399 100%);
+          background: linear-gradient(90deg, #5c2828 0%, #753333 40%, #f59e0b 80%, #fbbf24 100%);
           border-radius: 999px;
-          box-shadow: 0 0 14px rgba(52, 211, 153, 0.6);
+          box-shadow: 0 0 16px rgba(245, 158, 11, 0.5);
           transition: width 0.3s ease-out;
           position: relative;
           overflow: hidden;
@@ -364,11 +379,11 @@ function AuthLoadingScreen({ message }: { message: string }) {
           position: absolute;
           top: 0;
           right: 0;
-          width: 20px;
+          width: 24px;
           height: 100%;
           background: #ffffff;
-          box-shadow: 0 0 10px #ffffff;
-          opacity: 0.8;
+          box-shadow: 0 0 12px #ffffff;
+          opacity: 0.9;
           animation: laserPulse 1.2s infinite;
         }
 
@@ -381,7 +396,7 @@ function AuthLoadingScreen({ message }: { message: string }) {
           display: flex;
           align-items: center;
           gap: 8px;
-          color: #64748b;
+          color: rgba(255, 255, 255, 0.75);
           font-size: 0.78rem;
           font-weight: 600;
           letter-spacing: 0.5px;
